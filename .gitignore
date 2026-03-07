@@ -1,109 +1,78 @@
-## .gitignore "Java" template provided by GitHub
+# Created by https://www.toptal.com/developers/gitignore/api/macos,windows,linux
+# Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,linux
 
-# Compiled class file
-*.class
+### Linux ###
+*~
 
-# Log file
-*.log
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
 
-# BlueJ files
-*.ctxt
+# KDE directory preferences
+.directory
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+### macOS ###
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
 
-
-##############################
-## Maven
-##############################
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-pom.xml.bak
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
+# Icon must end with two \r
+Icon
 
 
-## .gitignore template for "Eclipse" projects copied from https://github.com/github/gitignore/blob/main/Global/Eclipse.gitignore
+# Thumbnails
+._*
 
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.recommenders
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
-# External tool builders
-.externalToolBuilders/
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
-# Locally stored "Eclipse launch configurations"
-*.launch
+### macOS Patch ###
+# iCloud generated files
+*.icloud
 
-# PyDev specific (Python IDE for Eclipse)
-*.pydevproject
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
 
-# CDT-specific (C/C++ Development Tooling)
-.cproject
+# Dump file
+*.stackdump
 
-# CDT- autotools
-.autotools
+# Folder config file
+[Dd]esktop.ini
 
-# Java annotation processor (APT)
-.factorypath
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
 
-# PDT-specific (PHP Development Tools)
-.buildpath
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
 
-# sbteclipse plugin
-.target
+# Windows shortcuts
+*.lnk
 
-# Tern plugin
-.tern-project
-
-# TeXlipse plugin
-.texlipse
-
-# STS (Spring Tool Suite)
-.springBeans
-
-# Ignore the Eclipse/STS Server configuration folder
-/Servers/
-
-# Code Recommenders
-.recommenders/
-
-# Annotation Processing
-.apt_generated/
-.apt_generated_tests/
-
-# Scala IDE specific (Scala & Java development for Eclipse)
-.cache-main
-.scala_dependencies
-.worksheet
-
-# Uncomment this line if you wish to ignore the project description file.
-# Typically, this file would be tracked if it contains build/dependency configurations:
-#.project
+# End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux
