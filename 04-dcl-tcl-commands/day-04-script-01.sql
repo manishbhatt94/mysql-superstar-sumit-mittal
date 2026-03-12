@@ -1,3 +1,7 @@
+-- #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+-- ===================== DCL (Data Control Language) ===================
+-- #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
 SELECT * FROM customers;
 SELECT * FROM customers LIMIT 10;
 SELECT COUNT(*) FROM customers;
@@ -76,3 +80,58 @@ SELECT * FROM information_schema.tables WHERE table_schema = 'retail_db';
 
 -- E.g.: Info about columns of all tables in retail_db database:
 SELECT * FROM information_schema.columns WHERE table_schema = 'retail_db';
+
+
+-- #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+-- ================= TCL (Transaction Control Language) ===============
+-- #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
+USE retail_db;
+-- ################# Commit/Rollback #################
+-- Switch to Manual Commit Mode (turn off auto-commit option)
+SET autocommit = OFF;
+
+SELECT * FROM employees LIMIT 10;
+DELETE FROM employees WHERE employee_id = 1; -- DML Operation (a)
+-- Rollback after a DML operation
+-- (with no commits performed after that particular DML operation)
+ROLLBACK;
+
+DELETE FROM employees WHERE employee_id > 95; -- DML Operation (b)
+SELECT * FROM employees ORDER BY employee_id DESC LIMIT 10; -- DQL
+COMMIT; -- Here, we commit after DML Operation (b). So it can't be rolled-back!
+
+-- Trying to execute ROLLBACK after DML Op (b) has been committed
+-- explicitly (above) - This will have no effect.
+ROLLBACK;
+
+-- DDL commands are implicitly auto-committed internally.
+-- When a DDL command is executed, a commit happens automatically
+-- regardless of the autocommit option.
+
+-- Only DML commands can be rolled back.
+
+-- So, we cannot rollback a DDL command, since it is committed always.
+DROP TABLE employees; -- DDL Operation - Can't be rolled back.
+
+-- Another thing is: if we run a DDL command, after running a DML.
+-- That is:
+-- First: DML-Operation-X;
+-- Then:  DDL-Operation-A; -- This DDL causes an automatic commit!
+-- Now, DML-Op-X can't be rolled back, since the automatic commit
+-- which occurred when running DDL-Op-A, also commit all previous
+-- non-committed changes, i.e. DML-Op-X also got committed.
+-- Therefore it cannot be rolled back now.
+
+-- DML-Op-X:
+INSERT INTO employees VALUES (701, 'Goku', 'goku.dbz@gmail.com', '921-192-912', 'Tokyo', 50000.00);
+
+-- DDL-Op-A:
+CREATE TABLE anime ( show_name VARCHAR(100), pilot_date date ); -- Committed automatically
+
+-- Can't rollback now:
+ROLLBACK; -- No effect!
+
+
+-- Switch back to Auto Commit Mode (turn auto-commit option back on)
+SET autocommit = ON;
