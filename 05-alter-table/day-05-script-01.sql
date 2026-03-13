@@ -102,9 +102,83 @@ SELECT * FROM orders;
 -- ################# MODIFY COLUMN #################
 -- ====== (Change the data-type of a column) ======
 
+-- ====== (DATE to DATETIME and back) ======
+
 -- Requirement: Change the data-type of `order_date` column
 -- from DATE to now having the DATETIME type instead.
 -- So, that we are able to capture the order's time as well
 -- in addition to just the date.
 ALTER TABLE orders MODIFY order_date DATETIME;
+-- Now, the order_date column has the time value of midnight '00:00:00'
+
+-- Change type back to DATE (from DATETIME).
+-- Executes without errors or warnings.
+-- No time data was anyways going to be lost, as it was
+-- midnight '00:00:00' for all rows.
+ALTER TABLE orders MODIFY COLUMN order_date DATE;
+-- (Note: COLUMN keyword is optional to specify after MODIFY)
+
+-- Now, we change the type back to DATETIME. Why?
+-- So that, we can insert few records that have a non-midnight
+-- time data, i.e. time data which can be lost if we change
+-- the column data-type to DATE, when such data exists in the table
+ALTER TABLE orders MODIFY order_date DATETIME;
+
+-- Let's check the table structure before going further:
+DESCRIBE orders;
+
+-- We now add records that have non-midnight time data:
+-- We'll add those records for order_id=7 - so we first delete existing
+-- records where order_id=7
+DELETE FROM orders WHERE order_id = 7;
+
+-- Insert non-midnight time records for order_id=7
+INSERT INTO orders
+(order_id, order_item_id, order_date, customer_id, order_status,
+product_id, quantity, product_price) VALUES
+ -- this below record has non-midnight time data for `order_date`
+(7, 14, '2013-07-25 12:42:30', 4530, 'COMPLETE', 1073, 1, 199.99),
+(7, 15, '2013-07-25', 4530, 'COMPLETE', 957, 1, 299.98),
+(7, 16, '2013-07-25', 4530, 'COMPLETE', 926, 5, 15.99);
+
+SELECT * FROM orders;
+
+-- Now, what if we convert the `order_date` column type to DATE from DATETIME?
+-- Now that we have the below record in the table which can be affected
+-- from the column type conversion to DATE:
+-- Record: (order_id=7, order_item_id=14, order_date='2013-07-25 12:42:30')
+ALTER TABLE orders MODIFY order_date DATE;
+-- The above ALTER command worked, changing the column type from
+-- DATETIME to DATE, and, we just get a warning from MySQL:
+/*
+20 row(s) affected, 1 warning(s):
+1292 Incorrect date value: '2013-07-25 12:42:30' for column 'order_date' at row 18
+Records: 20  Duplicates: 0  Warnings: 1
+*/
+
+-- Demo done. Change column type back to DATETIME:
+ALTER TABLE orders MODIFY COLUMN order_time DATETIME;
+
+
+-- ################# RENAME COLUMN #################
+
+-- Syntax: ALTER TABLE table_name RENAME COLUMN old_column_name TO new_column_name;
+
+-- Renames column `order_date` to `order_time` in the `orders` table:
+ALTER TABLE orders RENAME COLUMN order_date TO order_time;
+
+-- Note: In case of ALTER TABLE ... RENAME COLUMN, the COLUMN keyword is mandatory.
+-- MySQL Docs: 
+/* 
+The word COLUMN is optional and can be omitted, except for RENAME COLUMN
+(to distinguish a column-renaming operation from the RENAME table-renaming operation).
+
+We rename a table using below ALTER TABLE .. RENAME statement, or using RENAME statement:
+
+ALTER TABLE old_table RENAME new_table;
+
+RENAME TABLE old_table1 TO new_table1,
+             old_table2 TO new_table2,
+             old_table3 TO new_table3;
+*/
 
