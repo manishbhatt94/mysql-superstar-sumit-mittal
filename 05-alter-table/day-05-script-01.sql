@@ -102,7 +102,8 @@ SELECT * FROM orders;
 -- ################# MODIFY COLUMN #################
 -- ====== (Change the data-type of a column) ======
 
--- ====== (DATE to DATETIME and back) ======
+-- ======== (DATE to DATETIME and back) ======
+-- ========== (column: order_date) ==============
 
 -- Requirement: Change the data-type of `order_date` column
 -- from DATE to now having the DATETIME type instead.
@@ -158,27 +159,3 @@ Records: 20  Duplicates: 0  Warnings: 1
 
 -- Demo done. Change column type back to DATETIME:
 ALTER TABLE orders MODIFY COLUMN order_time DATETIME;
-
-
--- ################# RENAME COLUMN #################
-
--- Syntax: ALTER TABLE table_name RENAME COLUMN old_column_name TO new_column_name;
-
--- Renames column `order_date` to `order_time` in the `orders` table:
-ALTER TABLE orders RENAME COLUMN order_date TO order_time;
-
--- Note: In case of ALTER TABLE ... RENAME COLUMN, the COLUMN keyword is mandatory.
--- MySQL Docs: 
-/* 
-The word COLUMN is optional and can be omitted, except for RENAME COLUMN
-(to distinguish a column-renaming operation from the RENAME table-renaming operation).
-
-We rename a table using below ALTER TABLE .. RENAME statement, or using RENAME statement:
-
-ALTER TABLE old_table RENAME new_table;
-
-RENAME TABLE old_table1 TO new_table1,
-             old_table2 TO new_table2,
-             old_table3 TO new_table3;
-*/
-
