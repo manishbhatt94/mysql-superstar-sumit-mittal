@@ -63,6 +63,40 @@ INSERT INTO orders VALUES
 -- Error Code: 3819. Check constraint 'orders_chk_1' is violated.
 
 -- Try to insert a valid record:
-
+INSERT INTO orders VALUES
+(1, 1, '2013-07-25', 11599, 'CLOSED', 957, 1, 299.98, 299.98);
 
 SHOW CREATE TABLE orders;
+
+/*
+CREATE TABLE `orders` (
+    `order_id` int DEFAULT NULL,
+    `order_item_id` int DEFAULT NULL,
+    `order_date` date DEFAULT NULL,
+    `customer_id` int DEFAULT NULL,
+    `order_status` varchar(30) DEFAULT NULL,
+    `product_id` int DEFAULT NULL,
+    `quantity` int DEFAULT NULL,
+    `product_price` float DEFAULT NULL,
+    `total_price` float DEFAULT NULL,
+    CONSTRAINT `orders_chk_1` CHECK (
+        (`order_status` in (_utf8mb4'CLOSED', _utf8mb4'PENDING_PAYMENT',
+            _utf8mb4'COMPLETE', _utf8mb4'PROCESSING', _utf8mb4'ON_HOLD',
+            _utf8mb4'SUSPECTED_FRAUD', _utf8mb4'PENDING')
+        )
+    )
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+*/
+
+-- Drop the CHECK constraint called `orders_chk_1` from the `orders` table:
+ALTER TABLE orders
+DROP CHECK orders_chk_1;
+
+-- Add the same constraint back again to the "orders.order_status" column,
+-- but give the constraint the name "CHK_OrderStatus":
+ALTER TABLE orders
+    ADD CONSTRAINT CHK_OrderStatus CHECK(order_status IN
+        ('CLOSED', 'PENDING_PAYMENT', 'COMPLETE', 'PROCESSING',
+        'ON_HOLD', 'SUSPECTED_FRAUD', 'PENDING')
+    );
+
