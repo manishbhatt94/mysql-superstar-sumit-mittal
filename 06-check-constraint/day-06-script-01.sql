@@ -96,6 +96,52 @@ CREATE TABLE `orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 */
 
+-- ################ Column-Level Constraints ###############
+CREATE TABLE users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT, -- Primary Key
+    username VARCHAR(50) NOT NULL UNIQUE, -- Not Null & Unique
+
+    status VARCHAR(10) DEFAULT 'active', -- Default value
+
+    -- Below we define an UN-NAMED constraint for the `age` column:
+    -- (Since we don't use the CONSTRAINT keyword)
+    age INT CHECK (age >= 18), -- Check constraint (MySQL 8.0.16+)
+
+    -- Below we define a NAMED constraint called `users_chk_wallet_balance`
+    -- for the `wallet_balance` column:
+    -- (Note: usage of CONSTRAINT keyword)
+    wallet_balance INT CONSTRAINT users_chk_wallet_balance
+        CHECK (wallet_balance >= 0)
+);
+
+SHOW CREATE TABLE users;
+
+DROP TABLE orders;
+
+-- Specify constraints on two columns: `order_status` & `quantity`:
+CREATE TABLE orders (
+    order_id INT,
+    order_item_id INT,
+    order_date DATE,
+    customer_id INT,
+    order_status VARCHAR(30) CHECK (
+        order_status IN ('CLOSED', 'PENDING_PAYMENT',
+                'COMPLETE', 'PROCESSING', 'ON_HOLD',
+                'SUSPECTED_FRAUD', 'PENDING'
+            )
+        ),
+    product_id INT,
+    quantity INT CONSTRAINT orders_chk_quantity CHECK (quantity <= 50),
+    product_price FLOAT,
+    total_price FLOAT
+);
+SHOW CREATE TABLE orders;
+
+-- Test if constraint works:
+INSERT INTO orders VALUES (1, 1, '2013-07-25', 11599, 'CLOSED', 957, 52,
+299.98, null);
+-- Error Code: 3819. Check constraint 'orders_chk_quantity' is violated.
+
 -- ################# Drop Constraint #################
 
 -- Drop the CHECK constraint called `orders_chk_1` from the `orders` table:
@@ -141,3 +187,55 @@ SELECT * FROM information_schema.check_constraints;
 SELECT * FROM information_schema.referential_constraints;
 SELECT * FROM information_schema.table_constraints;
 
+-- ################ MORE EXAMPLES ####################
+
+-- ======= CHECK: Age is Positive Integer =======
+CREATE TABLE persons (
+    person_id INT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    
+    -- Constraint specified as a Column-Level constraint:
+    age INT CHECK (age > 0)
+);
+
+-- Test constraint with attempting to insert invalid record (age = -5):
+INSERT INTO persons (person_id, first_name, last_name, age)
+VALUES (1, 'Raj', 'Sharma', -5);
+-- Error Code: 3819. Check constraint 'persons_chk_1' is violated.
+
+-- ======= CHECK: Email pattern is rougly correct =======
+CREATE TABLE customers (
+    user_id INT,
+    username VARCHAR(50),
+    email VARCHAR(100),
+    CHECK (email LIKE '%@%.%')
+);
+-- NOTE: How we used the LIKE Operator inside the CHECK Clause.
+
+-- Test constraint with valid record:
+INSERT INTO customers (user_id, username, email)
+VALUES (1, 'sumitm', 'sumit@trendytech.in');
+-- Works fine: Record inserted!
+
+-- Test constraint with invalid record:
+INSERT INTO customers (user_id, username, email)
+VALUES (2, 'manishb', 'manish@california');
+-- Error Code: 3819. Check constraint 'customers_chk_1' is violated.
+
+-- ========== CHECK: Compare dates in CHECK Constraint =============
+CREATE TABLE projects (
+    project_id INT,
+    project_name VARCHAR(100),
+    start_date DATE,
+    end_date DATE,
+    CONSTRAINT projects_chk_enddate_startdate CHECK (end_date > start_date)
+);
+SHOW CREATE TABLE projects;
+
+INSERT INTO projects (project_id, project_name, start_date, end_date)
+VALUES (1, 'Project Alpha', '2023-01-01', '2023-12-31');
+
+INSERT INTO projects (project_id, project_name, start_date, end_date)
+VALUES (1, 'Project Beta', '2023-01-01', '2022-12-31');
+-- Error Code: 3819. Check constraint 'projects_chk_enddate_startdate' is violated.

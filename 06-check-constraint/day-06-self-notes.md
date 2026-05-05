@@ -200,12 +200,47 @@ the table:
 
 These are placed immediately after the data type. They are simple to write but can only refer to that specific column.
 
+> **Note**: The <u>*use of CONSTRAINT keyword*</u> will let us provide a custom name for the constraint.
+> When omitting the CONSTRAINT keyword, we don't have option to provide a custom name for the constraint,
+> and in that case, MySQL will assign an auto-generated name for it.
+
 ```sql
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT, -- Primary Key
-    username VARCHAR(50) NOT NULL UNIQUE,   -- Not Null and Unique
-    age INT CHECK (age >= 18),              -- Check constraint (MySQL 8.0.16+)
-    status VARCHAR(10) DEFAULT 'active'     -- Default value
+    username VARCHAR(50) NOT NULL UNIQUE, -- Not Null & Unique
+
+    status VARCHAR(10) DEFAULT 'active', -- Default value
+
+    -- Below we define an UN-NAMED constraint for the `age` column:
+    -- (Since we don't use the CONSTRAINT keyword)
+    age INT CHECK (age >= 18), -- Check constraint (MySQL 8.0.16+)
+
+    -- Below we define a NAMED constraint called `users_chk_wallet_balance`
+    -- for the `wallet_balance` column:
+    -- (Note: usage of CONSTRAINT keyword)
+    wallet_balance INT CONSTRAINT users_chk_wallet_balance
+        CHECK (wallet_balance >= 0)
+);
+```
+
+OR using our "orders" table example of adding CHECK constraint on "order_status" column, as a _column-level constraint_:
+
+```sql
+CREATE TABLE orders (
+    order_id INT,
+    order_item_id INT,
+    order_date DATE,
+    customer_id INT,
+    order_status VARCHAR(30) CHECK (
+        order_status IN ('CLOSED', 'PENDING_PAYMENT',
+                'COMPLETE', 'PROCESSING', 'ON_HOLD',
+                'SUSPECTED_FRAUD', 'PENDING'
+            )
+        ),
+    product_id INT,
+    quantity INT CONSTRAINT orders_chk_quantity CHECK (quantity <= 50),
+    product_price FLOAT,
+    total_price FLOAT
 );
 ```
 
@@ -372,3 +407,109 @@ Here:
     )
     ```
 
+
+## More Examples
+
+### Pesons table - Check age is a positive integer
+
+"persons" Table definition with CHECK Constraint on "age" column specified:
+
+```sql
+CREATE TABLE persons (
+    person_id INT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    
+    -- Constraint specified as a Column-Level constraint:
+    age INT CHECK (age > 0)
+);
+
+-- Test constraint with attempting to insert invalid record (age = -5):
+INSERT INTO persons (person_id, first_name, last_name, age)
+VALUES (1, 'Raj', 'Sharma', -5);
+-- Error Code: 3819. Check constraint 'persons_chk_1' is violated.
+```
+
+Other ways to specify this CHECK constraint in CREATE TABLE statment:
+1. As a column-level constraint, without the CONSTRAINT keyword, i.e. without constraint name.
+    As shown above.
+1. As a column-level constraint, with the CONSTRAINT keyword & the constraint name.
+    ```sql
+    CREATE TABLE persons (
+        ...
+        age INT CONSTRAINT persons_chk_age CHECK (age > 0),
+        ...
+    );
+    ```
+1. As a table-level constraint, without the CONSTRAINT keyword, i.e. without constraint name.
+    ```sql
+    CREATE TABLE persons (
+        ...
+        age INT,
+        CHECK (age > 0),
+        ...
+    );
+    ```
+1. As a table-level constraint, with the CONSTRAINT keyword & the constraint name.
+    ```sql
+    CREATE TABLE persons (
+        ...
+        age INT,
+        CONSTRAINT persons_chk_age CHECK (age > 0),
+        ...
+    );
+    ```
+
+### Customers table - Check email &nbsp;*pattern*&nbsp; is about correct
+
+"customers" Table definition with CHECK Constraint on "email" column specified:
+
+(**Note:** Check out how we used the *LIKE Operator* inside the CHECK Clause)
+
+```sql
+CREATE TABLE customers (
+    user_id INT,
+    username VARCHAR(50),
+    email VARCHAR(100),
+    CHECK (email LIKE '%@%.%')
+);
+
+-- Test constraint with valid record:
+INSERT INTO customers (user_id, username, email)
+VALUES (1, 'sumitm', 'sumit@trendytech.in');
+-- Works fine: Record inserted!
+
+-- Test constraint with invalid record:
+INSERT INTO customers (user_id, username, email)
+VALUES (2, 'manishb', 'manish@california');
+-- Error Code: 3819. Check constraint 'customers_chk_1' is violated.
+```
+
+### Projects table - Compare dates inside CHECK constraint
+
+"projects" Table definition with CHECK Constraint **that checks and validates based on the value of two columns**:
+
+(Here "projects_chk_enddate_startdate" named CHECK constraint checks the value of "end_date" and "start_date" DATE type columns, and validates that the date in "end_date" MUST BE *AFTER* the date in "start_date")
+
+```sql
+CREATE TABLE projects (
+    project_id INT,
+    project_name VARCHAR(100),
+    start_date DATE,
+    end_date DATE,
+    CONSTRAINT projects_chk_enddate_startdate CHECK (end_date > start_date)
+);
+SHOW CREATE TABLE projects;
+
+-- Test constraint with valid record:
+-- (End Date is after Start Date)
+INSERT INTO projects (project_id, project_name, start_date, end_date)
+VALUES (1, 'Project Alpha', '2023-01-01', '2023-12-31');
+-- Works fine: Record inserted!
+
+-- Test constraint with invalid record:
+-- (End Date IS NOT after Start Date)
+INSERT INTO projects (project_id, project_name, start_date, end_date)
+VALUES (2, 'Project Beta', '2023-01-01', '2022-12-31');
+-- Error Code: 3819. Check constraint 'projects_chk_enddate_startdate' is violated.
+```
