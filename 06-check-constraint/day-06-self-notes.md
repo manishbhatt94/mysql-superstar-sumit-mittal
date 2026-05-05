@@ -11,9 +11,9 @@
 - At a later point of time when table already exists, we can <u>*alter the table definition & add a
 constraint*</u>, using `ALTER TABLE ... ADD CONSTRAINT` or similar statement.
 
-### Orders table, and validating `order_status` column value
+## Orders table, and validating `order_status` column value
 
-#### Create "orders" table
+### Create "orders" table
 
 We currently have the below SQL CREATE TABLE statement for creating our `orders` table:
 
@@ -30,7 +30,7 @@ CREATE TABLE orders (
     total_price FLOAT
 );
 ```
-#### "order_status" - permitted set of values
+### "order_status" - permitted set of values
 
 Currently, we can have any value placed under `order_status` column.
 
@@ -58,7 +58,7 @@ INSERT INTO orders VALUES
 (1, 1, '2013-07-25', 11599, 'CLOSE', 957, 1, 299.98, 299.98);
 ```
 
-#### Add CHECK constraint using ALTER TABLE
+### Add CHECK constraint using ALTER TABLE
 
 Here we use CHECK constraint without providing a name for the constraint:
 
@@ -121,7 +121,7 @@ ALTER TABLE orders
 And, this does work now! We have added a new CHECK constraint (with an auto-generated name) that
 checks the value of "order_status" column in the "orders" table.
 
-#### Test if constraint works
+### Test if constraint works
 
 **Test inserting invalid record:**
 
@@ -149,7 +149,7 @@ And, above INSERT works fine - the (valid) record gets inserted.
 
 _This means that the new constraint is added properly & is working fine._
 
-#### Find name of constraint
+### Find name of constraint
 
 **Using CREATE TABLE script:**
 
@@ -191,7 +191,7 @@ CREATE TABLE `orders` (
 **Name of constraint:** From above CREATE TABLE script, we find the (auto-generated) name of the
 CHECK constraint to be: **`orders_chk_1`**.
 
-#### Specify constraint while table creation
+### Specify constraint while table creation
 
 From the above CREATE TABLE script, we see how to create (or specify) constraint(s) while creating
 the table:
@@ -237,12 +237,12 @@ CREATE TABLE project_members (
 );
 ```
 
-#### Deleting (dropping) a constraint
+### Deleting (dropping) a constraint
 
 While modern MySQL versions (8.0.19+) support a generic `DROP CONSTRAINT` command,
 older versions often require type-specific commands like `DROP FOREIGN KEY` or `DROP INDEX`.
 
-##### 1. Generic Syntax (MySQL 8.0.19 and newer)
+#### 1. Generic Syntax (MySQL 8.0.19 and newer)
 
 This is the <u>standard SQL</u> syntax for deleting most *named constraints*:
 
@@ -251,7 +251,7 @@ ALTER TABLE table_name
 DROP CONSTRAINT constraint_name;
 ```
 
-##### 2. Constraint-Type Specific Syntax
+#### 2. Constraint-Type Specific Syntax
 
 Here we need to mention the type of the constraint (like `FOREIGN KEY`, `CHECK`,
 `INDEX`, `PRIMARY KEY`), *instead of the keyword `CONSTRAINT`* like in the previous
@@ -277,7 +277,7 @@ DROP PRIMARY KEY; -- NOTE BELOW
 -- NOTE: Since a table can only have one primary key, you don't need a name.
 ```
 
-#### Drop CHECK constraint named `orders_chk_1`
+### Drop CHECK constraint named `orders_chk_1`
 
 Using the below statement using Constraint-Type Specific Syntax:
 
@@ -286,7 +286,7 @@ ALTER TABLE orders
 DROP CHECK orders_chk_1;
 ```
 
-#### Add named constraint with ALTER TABLE statement & CONSTRAINT keyword
+### Add named constraint with ALTER TABLE statement & CONSTRAINT keyword
 
 Use the syntax:
 
@@ -305,4 +305,70 @@ ALTER TABLE orders
     );
 -- Note: Here Contraint-Type was CHECK.
 ```
+
+### Constraint info using "information_schema"
+
+Connect to "information_schema" database:
+
+```sql
+USE information_schema;
+SELECT DATABASE();
+```
+
+Find tables in it, with names ending with 'constraints':
+
+> **💡 Tip:** We can use LIKE Operator with commands like `SHOW TABLES;` & `SHOW DATABASES;`
+> ```sql
+> SHOW TABLES LIKE '%constraints';
+> -- OR:
+> -- SHOW DATABASES LIKE 'flipkartdb%';
+> -- OR:
+> SHOW FULL TABLES LIKE '%constraints';
+> ```
+> **Note:** SHOW FULL TABLES; gives extra "table_type" info (e.g. SYSTEM VIEW, BASE TABLE etc.)
+> in addition to just Table Name.
+
+OR, In order to get the same (& a bit more) info as with `SHOW TABLES LIKE '%constraints';`
+command, we can use the "information_schema.tables" like this:
+
+```sql
+DESCRIBE information_schema.tables;
+
+SELECT table_name FROM information_schema.tables
+	WHERE table_schema = 'information_schema'
+    AND table_name LIKE '%constraints';
+```
+
+There are 3 tables in information_schema which store info about various
+constraints defined in this MySQL instance's database tables:
+1. Table `information_schema.check_constraints`
+1. Table `information_schema.referential_constraints`
+1. Table `information_schema.table_constraints`
+
+#### Using "information_schema.check_constraints" table
+
+"check_constraints" table under "information_schema" database has theese four (4) columns:
+
+    "constraint_catalog", "constraint_schema", "constraint_name", "check_clause".
+
+Let's check the contents of this table:
+
+```sql
+SELECT * FROM information_schema.check_constraints;
+```
+
+![Table Contents of information_schema.check_constraints](assets/images/fig-01-table-contents-information-schema-check_constraints.png "Figure: Table Contents of information_schema.check_constraints")
+*Figure: Table Contents of information_schema.check_constraints*
+
+Here:
+
+- **"constraint_schema":** Holds the name of the database (e.g. "retail_db") within which our constraint is created.
+- **"constraint_name":** Holds the name of the constraint (e.g. 'CHK_OrderStatus').
+- **"check_clause":** Holds the CHECK clause used to define this particular check constraint. E.g.:
+    ```sql
+    (`order_status` IN
+        ('CLOSED', 'PENDING_PAYMENT', 'COMPLETE', 'PROCESSING',
+        'ON_HOLD', 'SUSPECTED_FRAUD', 'PENDING')
+    )
+    ```
 
