@@ -233,9 +233,14 @@ CREATE TABLE projects (
 );
 SHOW CREATE TABLE projects;
 
+-- Test constraint with valid record:
+-- (End Date is after Start Date)
 INSERT INTO projects (project_id, project_name, start_date, end_date)
 VALUES (1, 'Project Alpha', '2023-01-01', '2023-12-31');
+-- Works fine: Record inserted!
 
+-- Test constraint with invalid record:
+-- (End Date IS NOT after Start Date)
 INSERT INTO projects (project_id, project_name, start_date, end_date)
-VALUES (1, 'Project Beta', '2023-01-01', '2022-12-31');
+VALUES (2, 'Project Beta', '2023-01-01', '2022-12-31');
 -- Error Code: 3819. Check constraint 'projects_chk_enddate_startdate' is violated.
