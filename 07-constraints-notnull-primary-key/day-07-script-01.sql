@@ -190,4 +190,4 @@ CREATE TABLE `customers` (
 ALTER TABLE `customers` DROP CONSTRAINT `PK_customers`;
 
 -- Show INDEX'es from the `customers` table:
-SHOW INDEX FROM `customers`;
+SHOW INDEX FROM `retail_db`.`customers`;

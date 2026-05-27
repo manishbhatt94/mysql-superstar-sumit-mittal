@@ -369,6 +369,20 @@ _the default name instead_.
   or querying the `INFORMATION_SCHEMA.TABLE_CONSTRAINTS` table. The constraint
   name will consistently appear as `PRIMARY`.
 
+Below, we inspect `information_schema.table_constraints` table to verify the
+name of the Primary Key. Notice the `constraint_name` column value is `'PRIMARY'`:
+
+![Table Contents of information_schema.table_constraints](assets/images/fig-01-table-contents-information_schema-table_constraints.png "Figure: Table Contents of information_schema.table_constraints")
+*Figure: Table Contents of information_schema.table_constraints*
+<br>
+
+Also, we examine the result of query `SHOW INDEX FROM [table]` to verify the
+name of the Primary Key. Notice the `key_name` column value is `'PRIMARY'`:
+
+![Result of SOHW INDEX FROM table](assets/images/fig-02-show-index-from-table.png "Figure: Result of SOHW INDEX FROM table")
+*Figure: Result of SOHW INDEX FROM table*
+
+
 ### Why this happens
 
 This is a known architectural limitation in MySQL and MariaDB. Since a table can
