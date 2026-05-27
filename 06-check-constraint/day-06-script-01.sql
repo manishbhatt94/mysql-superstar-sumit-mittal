@@ -194,7 +194,7 @@ CREATE TABLE persons (
     person_id INT,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
-    
+
     -- Constraint specified as a Column-Level constraint:
     age INT CHECK (age > 0)
 );

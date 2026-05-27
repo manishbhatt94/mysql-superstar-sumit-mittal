@@ -195,4 +195,196 @@ The reason might be:
 
 # PRIMARY KEY Constraint
 
+<u>**Primary Key:**</u> A set of column(s) which can uniquely identify a record.
+The column(s) participating in the **Primary Key** of a table, cannot take NULL
+value.
 
+### "customers" Table
+
+We'll refer the below "customers" table in our discussions on PRIMARY KEY:
+
+```sql
+DROP TABLE IF EXISTS `customers`;
+
+CREATE TABLE `customers` (
+    `customer_id` INT NOT NULL,
+    `customer_fname` VARCHAR(50) NOT NULL,
+    `customer_lname` VARCHAR(50) NOT NULL,
+    `customer_email` VARCHAR(100) NOT NULL,
+    `customer_phone` VARCHAR(30),
+    `customer_street` VARCHAR(255),
+    `customer_city` VARCHAR(50) NOT NULL,
+    `customer_state` VARCHAR(50) NOT NULL,
+    `customer_zipcode` VARCHAR(10)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+**Note:**
+1. Here we have specified the NOT NULL constraint for all columns, except
+   the columns: "customer_phone", "customer_street", and "customer_zipcode".
+1. Currently, we have not specified any Primary Key constraint, while creating
+   the table, so we're allowed to provide duplicate values for the column(s)
+   which we might want to select for Primary Key.
+1. That is, if we later plan to select the column set ("customer_id") as the
+   Primary Key, then right now, since we haven't yet specified it, we're allowed
+   to provide duplicate values for this column.
+
+**Insert Multiple Records With Duplicate Value (Before specifying Primary Key):**
+
+Below, we insert two (2) records with the same value at "customer_id" column:
+
+```sql
+INSERT INTO customers VALUES
+    (1, 'Richard', 'Hernandez', 'richardhernandez@gmail.com', NULL,
+        '6303 Heather Plaza', 'Brownsville', 'TX', '78521'),
+    (1, 'Mary', 'Barrett', 'marybarrett@yahoo.com', NULL,
+        '9526 New Commercial Avenue', 'Littleton','CO','80126');
+```
+
+As expected, above INSERT statement has worked fine.
+
+## Define Primary Key constraint
+
+We can define the Primary Key constraint (and the constraint can be named or
+un-named) in multiple ways:
+
+**1. While creating a new table, inside the CREATE TABLE statement.**
+
+- **IF** only __*ONE COLUMN*__ has been selected as the Primary Key. Along-side
+  a column definition in the CREATE TABLE statement, like the syntax for a
+  column-level constraint.
+  ```sql
+  -- Un-named PRIMARY KEY Constraint:
+  CREATE TABLE customers (
+    `customer_id` INT PRIMARY KEY,
+    -- Other columns' definitions...
+  );
+  -- Named PRIMARY KEY Constraint:
+  CREATE TABLE customers (
+    `customer_id` INT CONSTRAINT `PK_customers` PRIMARY KEY,
+    -- Other columns' definitions...
+  );
+  ```
+- **IF** __*MULTIPLE COLUMNS*__ have been selected to participate in the Primary
+  Key. After all column definitions in the CREATE TABLE statement, like the
+  syntax for a table-level constraint.
+  ```sql
+  -- Un-named PRIMARY KEY Constraint:
+  CREATE TABLE customers (
+    `customer_id` INT NOT NULL,
+    `customer_fname` VARCHAR(50) NOT NULL,
+    `customer_lname` VARCHAR(50) NOT NULL,
+    `customer_email` VARCHAR(100) NOT NULL,
+    `customer_phone` VARCHAR(30),
+    -- Other columns' definitions...
+    PRIMARY KEY (`customer_id`, `customer_email`)
+  );
+  -- Named PRIMARY KEY Constraint:
+  CREATE TABLE customers (
+    `customer_id` INT NOT NULL,
+    `customer_fname` VARCHAR(50) NOT NULL,
+    `customer_lname` VARCHAR(50) NOT NULL,
+    `customer_email` VARCHAR(100) NOT NULL,
+    `customer_phone` VARCHAR(30),
+    -- Other columns' definitions...
+    CONSTRAINT `PK_customers` PRIMARY KEY (`customer_id`, `customer_email`)
+  );
+  ```
+- Table-level constraint syntax can also be used even when the Primary Key
+  contains __*ONLY ONE COLUMN*__ as the participant.
+  ```sql
+  CREATE TABLE customers (
+    `customer_id` INT NOT NULL,
+    `customer_fname` VARCHAR(50) NOT NULL,
+    -- Other columns' definitions...
+    PRIMARY KEY (`customer_id`)
+  );
+  ```
+<br>
+
+**2. By altering an existing table (that doesn't have a Primary Key), using the ALTER TABLE statement.**
+
+**Note:** The set of column(s) to participate in the Primary Key is to mentioned
+within parenthesis after the keyword `PRIMARY KEY`, as in:
+1. `PRIMARY KEY (customer_id)`, or
+2. `PRIMARY KEY (customer_id, customer_email)`.
+
+We use the below syntax to add the Primary Key constraint by altering an
+existing table:
+
+- Un-named PRIMARY KEY Constraint:
+  ```sql
+  -- When SINGLE COLUMN participates in the Primary Key:
+  ALTER TABLE customers ADD PRIMARY KEY (customer_id);
+  -- When MULTIPLE COLUMNS participate in the Primary Key:
+  ALTER TABLE customers ADD PRIMARY KEY (customer_id, customer_email);
+  ```
+- Named PRIMARY KEY Constraint:
+  ```sql
+  -- When SINGLE COLUMN participates in the Primary Key:
+  ALTER TABLE customers ADD CONSTRAINT PK_customers PRIMARY KEY (customer_id);
+  -- When MULTIPLE COLUMNS participate in the Primary Key:
+  ALTER TABLE customers ADD CONSTRAINT PK_customers
+    PRIMARY KEY (customer_id, customer_email);
+  ```
+
+For the above ALTER TABLE command to work, we must first ensure that all the
+existing records in the table are such that the column(s) we intend to
+include in the Primary Key, the values of such column(s) must be **UNIQUE**.
+
+If while executing the ALTER TABLE command to add the Primary Key, we have
+duplicate value(s) for the participating column(s) in some records, then the
+ALTER TABLE command will fail with below error:
+
+```txt
+Error Code: 1062. Duplicate entry '1' for key 'customers.PRIMARY'
+```
+
+We would, then need to first, fix these records by either updating them or
+deleting them (if required), and ensure uniqueness. For example, we can do:
+
+```sql
+-- Let's fix the duplicate entry by updating "customer_id"
+-- column value for record: customer_fname='Mary'
+UPDATE customers SET customer_id = 2 WHERE customer_fname='Mary';
+```
+
+## MySQL Ignores PRIMARY KEY's Custom Constraint Name
+
+Below text is copied from LLM (might contain mistakes, but is fairly accurate).
+
+In MySQL, the name for a **PRIMARY KEY** is always hardcoded as `PRIMARY`. While
+the SQL syntax allows you to provide a custom constraint name (e.g.,
+`CONSTRAINT my_custom_pk PRIMARY KEY`), _MySQL will silently ignore it and use_
+_the default name instead_.
+
+### Key Behavior Details
+
+- **Static Naming:** Unlike unique or foreign keys where custom names are
+  preserved, the primary key name is fixed as `PRIMARY` for all tables.
+- **No Error/Warning:** When you define a custom name in a `CREATE TABLE` or
+  `ALTER TABLE` statement, MySQL does not return an error; it simply discards
+  the name without notification.
+- **Verification:** You can confirm this by running `SHOW CREATE TABLE table_name;`
+  or querying the `INFORMATION_SCHEMA.TABLE_CONSTRAINTS` table. The constraint
+  name will consistently appear as `PRIMARY`.
+
+### Why this happens
+
+This is a known architectural limitation in MySQL and MariaDB. Since a table can
+have only one primary key, the system uses a reserved, uniform identifier
+(`PRIMARY`) to reference it internally and in error messages (e.g.,
+"Duplicate entry '...' for key 'PRIMARY'").
+
+### How to Drop a Primary Key
+
+Because the name is always the same, you do not need to know a custom name to
+remove it. You can simply use:
+
+```sql
+ALTER TABLE table_name DROP PRIMARY KEY;
+```
+
+If you attempt to drop it using your ignored custom name (e.g.,
+`DROP CONSTRAINT my_custom_pk`), MySQL will return an error stating that the
+constraint does not exist.

@@ -263,11 +263,11 @@ CREATE TABLE project_members (
     PRIMARY KEY (project_id, user_id),
 
     -- Named Foreign Key
-    CONSTRAINT fk_user 
+    CONSTRAINT fk_user
         FOREIGN KEY (user_id) REFERENCES users(user_id),
 
     -- Named Check Constraint
-    CONSTRAINT chk_role 
+    CONSTRAINT chk_role
         CHECK (role IN ('Lead', 'Developer', 'Designer'))
 );
 ```
@@ -419,7 +419,7 @@ CREATE TABLE persons (
     person_id INT,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
-    
+
     -- Constraint specified as a Column-Level constraint:
     age INT CHECK (age > 0)
 );
