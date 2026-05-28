@@ -126,7 +126,8 @@ INSERT INTO customers VALUES
 
 SELECT * FROM customers;
 
--- #### DEFINE PRIMARY KEY: By ALTER'ing existing table ####
+
+-- ############ DEFINE PRIMARY KEY: By ALTER'ing existing table ##############
 
 -- Adds an un-named PRIMARY KEY Constraint:
 ALTER TABLE customers ADD PRIMARY KEY (customer_id);
@@ -162,11 +163,16 @@ CREATE TABLE `customers` (
 -- Drop the PRIMARY KEY:
 ALTER TABLE `customers` DROP PRIMARY KEY;
 
+
+-- ###### MySQL ignores Custom Constraint Name for Primary Key: ########
+
 -- Run the ALTER TABLE to add PRIMARY KEY again:
 -- (Add a named PRIMARY KEY this time using CONSTRAINT clause)
 ALTER TABLE `customers`
 	ADD CONSTRAINT `PK_customers` PRIMARY KEY (customer_id);
--- This worked!
+-- This worked! (But keep in mind, MySQL has ignored the custom
+-- name for the constraint that we provided, and instead MySQL
+-- always goes the constraint name 'PRIMARY' for Primary Key!)
 
 -- Here is our CREATE TABLE script:
 -- (Notice the PRIMARY KEY Constraint is not named)
@@ -187,7 +193,100 @@ CREATE TABLE `customers` (
  */
 
 -- Drop the PRIMARY KEY:
+-- (Below command doesn't work coz. MySQL ignores custom constraint
+-- name that we provide for Primary Key, and instead MySQL uses the
+-- default constraint name of 'PRIMARY' for the Primary Key)
 ALTER TABLE `customers` DROP CONSTRAINT `PK_customers`;
+-- Above command fails since MySQL didn't save this name for any constraint.
+-- Error received:
+-- Error Code: 3940. Constraint 'PK_customers' does not exist.
+
+-- How to DROP the PRIMARY KEY then?:
+ALTER TABLE `customers` DROP PRIMARY KEY;
+-- This works fine, & drops the Primary Key.
+-- Above command gives this response (Table currently has 2 Records in total):
+-- 2 row(s) affected Records: 2  Duplicates: 0  Warnings: 0
+
+-- Re-add the PRIMARY KEY:
+ALTER TABLE `customers`
+	ADD CONSTRAINT `PK_customers` PRIMARY KEY (customer_id);
 
 -- Show INDEX'es from the `customers` table:
+-- (Notice the `key_name` column value is 'PRIMARY')
 SHOW INDEX FROM `retail_db`.`customers`;
+
+-- Show contents of `information_schema`.`table_constraints` table:
+-- (Notice the `constraint_name` column value is 'PRIMARY')
+SELECT * FROM `information_schema`.`table_constraints` WHERE
+	table_schema = 'retail_db' AND table_name = 'customers';
+
+
+-- ###### Error when Primary Key constraint violation occurs ########
+
+-- Tables for Error Demo:
+DROP TABLE IF EXISTS `temp_order_item`;
+CREATE TABLE `temp_order_item` (
+  `order_id` INT,
+  `product_id` INT,
+  `quantity` INT,
+  PRIMARY KEY (`order_id`, `product_id`)
+);
+DROP TABLE IF EXISTS `temp_delivery_address`;
+CREATE TABLE `temp_delivery_address` (
+  `address_id` INT,
+  `user_id` INT,
+  `full_address` VARCHAR(255),
+  PRIMARY KEY (`address_id`)
+);
+
+-- >>> Attempt NULL Value based Violation:
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (1, 50100, 2);
+-- Above INSERT: Valid Record. Works fine!
+SELECT * FROM `temp_order_item`;
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (NULL, 50100, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'order_id' cannot be null
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (1, NULL, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'product_id' cannot be null
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (NULL, NULL, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'order_id' cannot be null
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`)
+  VALUES (1, 11200, 'Vidyarthi Bhavan, Gandhi Bazaar, Bengaluru');
+-- Above INSERT: Valid Record. Works fine!
+SELECT * FROM `temp_delivery_address`;
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`)
+  VALUES (NULL, 11200, 'By2 Coffee, Basavanagudi, Bengaluru');
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'address_id' cannot be null
+
+
+-- >>> Attempt duplicate based Violation:
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`) VALUES
+  (1, 50125, 4),
+  (1, 50179, 3),
+  (2, 50134, 1),
+  (2, 50179, 6),
+  (1, 50125, 3); -- Here (1, 50125) Primary Key column-set values are duplicate!
+-- Fails with below error:
+-- Error Code: 1062. Duplicate entry '1-50125' for key 'temp_order_item.PRIMARY'
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`) VALUES
+  (2, 11200, 'By2 Coffee, Basavanagudi, Bengaluru'),
+  (3, 11200, 'Vasantha Vallabharaya Devasthana, Vasanthapura, Bengaluru'),
+  (2, 11307, 'CTR Malleshwaram'); -- Here (2) Primary Key column-set values are duplicate!
+-- Fails with below error:
+-- Error Code: 1062. Duplicate entry '2' for key 'temp_delivery_address.PRIMARY'
+

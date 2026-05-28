@@ -349,6 +349,91 @@ deleting them (if required), and ensure uniqueness. For example, we can do:
 UPDATE customers SET customer_id = 2 WHERE customer_fname='Mary';
 ```
 
+## Error when Primary Key constraint violation occurs
+
+After adding the Primary Key constraint to a table, if we try to violate the
+same, either by:
+
+- Inserting a record, that has NULL value(s) in the column(s) participating in
+  the Primary Key. Any of the Primary Key's participant column(s) is not allowed
+  to hold the value NULL. Or,
+- Inserting a record, that duplicates the value(s) of the Primary Key
+  participant column(s), such that after insertion the table wouldn't have
+  unique value(s) for the Primary Key participant column-set.
+
+We will try both violations. And report the error that we receive.
+
+```sql
+-- >>> Create tables:
+DROP TABLE IF EXISTS `temp_order_item`;
+CREATE TABLE `temp_order_item` (
+  `order_id` INT,
+  `product_id` INT,
+  `quantity` INT,
+  PRIMARY KEY (`order_id`, `product_id`)
+);
+DROP TABLE IF EXISTS `temp_delivery_address`;
+CREATE TABLE `temp_delivery_address` (
+  `address_id` INT,
+  `user_id` INT,
+  `full_address` VARCHAR(255),
+  PRIMARY KEY (`address_id`)
+);
+
+
+-- >>> Attempt NULL Value based Violation:
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (1, 50100, 2);
+-- Above INSERT: Valid Record. Works fine!
+SELECT * FROM `temp_order_item`;
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (NULL, 50100, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'order_id' cannot be null
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (1, NULL, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'product_id' cannot be null
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`)
+  VALUES (NULL, NULL, 2);
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'order_id' cannot be null
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`)
+  VALUES (1, 11200, 'Vidyarthi Bhavan, Gandhi Bazaar, Bengaluru');
+-- Above INSERT: Valid Record. Works fine!
+SELECT * FROM `temp_delivery_address`;
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`)
+  VALUES (NULL, 11200, 'By2 Coffee, Basavanagudi, Bengaluru');
+-- Above INSERT: Invalid Record. Fails with error:
+-- Error Code: 1048. Column 'address_id' cannot be null
+
+
+-- >>> Attempt duplicate based Violation:
+
+INSERT INTO `temp_order_item` (`order_id`, `product_id`, `quantity`) VALUES
+  (1, 50125, 4),
+  (1, 50179, 3),
+  (2, 50134, 1),
+  (2, 50179, 6),
+  (1, 50125, 3); -- Here (1, 50125) Primary Key column-set values are duplicate!
+-- Fails with below error:
+-- Error Code: 1062. Duplicate entry '1-50125' for key 'temp_order_item.PRIMARY'
+
+INSERT INTO `temp_delivery_address` (`address_id`, `user_id`, `full_address`) VALUES
+  (2, 11200, 'By2 Coffee, Basavanagudi, Bengaluru'),
+  (3, 11200, 'Vasantha Vallabharaya Devasthana, Vasanthapura, Bengaluru'),
+  (2, 11307, 'CTR Malleshwaram'); -- Here (2) Primary Key column-set values are duplicate!
+-- Fails with below error:
+-- Error Code: 1062. Duplicate entry '2' for key 'temp_delivery_address.PRIMARY'
+
+```
+
 ## MySQL Ignores PRIMARY KEY's Custom Constraint Name
 
 Below text is copied from LLM (might contain mistakes, but is fairly accurate).
@@ -380,7 +465,7 @@ Also, we examine the result of query `SHOW INDEX FROM [table]` to verify the
 name of the Primary Key. Notice the `key_name` column value is `'PRIMARY'`:
 
 ![Result of SOHW INDEX FROM table](assets/images/fig-02-show-index-from-table.png "Figure: Result of SOHW INDEX FROM table")
-*Figure: Result of SOHW INDEX FROM table*
+*Figure: Result of SHOW INDEX FROM table*
 
 
 ### Why this happens
