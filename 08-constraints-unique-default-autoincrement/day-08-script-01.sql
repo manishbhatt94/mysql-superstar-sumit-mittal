@@ -2,6 +2,10 @@
 -- ##################### UNIQUE Constraint #########################
 -- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
 
+-- ~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~
+
+-- Uses: SQL Standard syntax of 'UNIQUE' (instead of MySQL 'UNIQUE KEY')
+
 DROP TABLE IF EXISTS `customers`;
 CREATE TABLE `customers` (
     `customer_id` INT,
@@ -57,6 +61,7 @@ ALTER TABLE `customers` DROP CONSTRAINT `customer_email`;
 
 -- ~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~
 
+-- Uses: MySQL-specific syntax of 'UNIQUE KEY' (instead of just 'UNIQUE')
 
 DROP TABLE IF EXISTS `customers`;
 CREATE TABLE `customers` (
@@ -73,6 +78,14 @@ CREATE TABLE `customers` (
 );
 SHOW INDEX FROM `customers`;
 SHOW CREATE TABLE `customers`;
+
+DROP INDEX `customer_email` ON `customers`;
+ALTER TABLE `customers` ADD UNIQUE KEY `UC_email` (`customer_email`);
+SHOW INDEX FROM `customers`;
+
+DROP INDEX `customer_phone` ON `customers`;
+ALTER TABLE `customers` ADD UNIQUE KEY `UC_phone` (`customer_phone`);
+SHOW INDEX FROM `customers`;
 
 -- ~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~
 
