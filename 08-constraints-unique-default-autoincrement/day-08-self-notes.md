@@ -69,6 +69,7 @@ UNIQUE INDEX unq_name (col)
 - Composite unique (multi-column)
 ```sql
 CONSTRAINT unq_combo UNIQUE (col1, col2)
+-- or
 UNIQUE KEY unq_combo (col1, col2)
 ```
 
@@ -146,8 +147,8 @@ ALTER TABLE t DROP INDEX unq_email;
 ```
 - Check definition:
 ```sql
-SHOW CREATE TABLE t\G
-SHOW INDEX FROM t\G
+SHOW CREATE TABLE t;
+SHOW INDEX FROM t;
 ```
 
 ### Quick memory aids
@@ -155,3 +156,25 @@ SHOW INDEX FROM t\G
 - CONSTRAINT = rule (standard); UNIQUE KEY = index (MySQL).
 - If you want to name it inline after a column and MySQL errors — move the name
   to a table-level CONSTRAINT or use UNIQUE KEY.
+
+## NOT NULL Constraint along with UNIQUE Constraint
+
+We can also provide NOT NULL constraint together with UNIQUE constraint, on a
+<u>particular column</u> (Since NOT NULL is specifically only a per-single-column
+constraint).
+
+```sql
+DROP TABLE IF EXISTS `customers`;
+CREATE TABLE `customers` (
+    `customer_id` INT,
+    `customer_fname` VARCHAR(50),
+    `customer_lname` VARCHAR(50),
+    `customer_email` VARCHAR(100) NOT NULL UNIQUE,
+    `customer_phone` VARCHAR(30),
+    `customer_street` VARCHAR(255),
+    `customer_city` VARCHAR(50),
+    `customer_state` VARCHAR(50),
+    `customer_zipcode` VARCHAR(10),
+    PRIMARY KEY (`customer_id`)
+);
+```

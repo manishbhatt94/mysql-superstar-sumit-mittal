@@ -283,3 +283,45 @@ CREATE TABLE `customers` (
 */
 
 -- ~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~
+
+-- ########## VERIFY IF UNIQUENESS IS ENFORCED ##############
+
+DESCRIBE `customers`;
+
+INSERT INTO customers VALUES
+    (1, 'Richard', 'Hernandez', 'richardhernandez@gmail.com', '9998887766',
+        '6303 Heather Plaza', 'Brownsville', 'TX', '78521');
+-- INSERT: Done!
+
+SELECT * FROM customers;
+
+INSERT INTO customers VALUES
+    (2, 'Mary', 'Barrett', 'marybarrett@yahoo.com', '9998887766',
+        '9526 New Commercial Avenue', 'Littleton', 'CO', '80126');
+-- Has duplicate value '9998887766' for UNIQUE Constraint column `customer_phone`.
+-- INSERT: Fails with error:
+-- Error Code: 1062. Duplicate entry '9998887766' for key 'customers.UC_phone'
+
+
+-- ############# DEMO THAT MULTIPLE NULLS ARE ALLOWED ################
+
+INSERT INTO customers VALUES
+    (2, 'Mary', 'Barrett', 'marybarrett@yahoo.com', '794-554-1917',
+        '9526 New Commercial Avenue', 'Littleton', 'Colorado', '80126'),
+	-- Three records below have `customer_phone` as NULL:
+	(3, 'Jason', 'Statham', 'jason.s@reddif.com', NULL,
+        '9790 Eliza Wells', 'South Ezekielchester', 'Maryland', '58436'),
+	(4, 'Nina', 'Volkman', 'volkman23nina@hotmail.com', NULL,
+        '7944 Keeling Coves', 'Wisokyfield', 'Kansas', '65888'),
+	(5, 'Audrey', 'Hyatt', 'audry90hytt@msn.com', NULL,
+        '121 Shad Point', 'Huntington Park', 'Nebraska', '62316'),
+	-- Three records below have `customer_email` as NULL:
+	(6, 'Frances', 'Leannon', NULL, '(807) 869-8032',
+        '1076 Olson Roads', 'North Antwon', 'Minnesota', '90292'),
+	(7, 'Raul', 'Williamson', NULL, '1-971-305-8770',
+        '1069 Talia Ford', 'Kileyfurt', 'Delaware', '52621'),
+	(8, 'Julie', 'King', NULL, '(334) 730-2595',
+        '1750 Connelly Manor', 'Tonawanda', 'Nevada', '41883');
+-- All records inserted!
+
+SELECT * FROM customers;
