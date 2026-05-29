@@ -73,3 +73,25 @@ INSERT INTO orders VALUES
     (5, 1102, 502007, 2, DEFAULT);
 
 SELECT * FROM orders;
+
+
+-- ~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~~-~-~-~-~-~-~-~
+
+-- ######## Try inserting all defaults ##############
+-- === Using: INSERT INTO orders () VALUES (); =====
+
+-- First, drop primary key:
+ALTER TABLE orders DROP PRIMARY KEY;
+
+-- Also drop the NOT NULL on `order_id` column
+-- (automatically present since it was Primary Key column):
+ALTER TABLE orders MODIFY COLUMN order_id INT NULL; -- Specify that NULL is allowed.
+
+-- Add default value for `order_id` column:
+-- (Won't be required after removing NOT NULL constraint)
+ALTER TABLE orders ALTER COLUMN order_id SET DEFAULT 111;
+
+DESCRIBE orders;
+
+-- Insert record with all fields as their default value:
+INSERT INTO orders () VALUES ();
