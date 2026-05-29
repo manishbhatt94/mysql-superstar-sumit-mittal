@@ -178,3 +178,206 @@ CREATE TABLE `customers` (
     PRIMARY KEY (`customer_id`)
 );
 ```
+
+> **Note:** A column having a NOT NULL constraint, in addition to a UNIQUE
+> Constraint is useful in cases where the value of the column must be unique
+> across all records, and the column MUST have a value (i.e. it can't be empty or
+> NULL) for any record.
+> 
+> For example, `customer_email` might be falling under this criteria. It need not
+> be selected as Primary Key, since for that we have `customer_id`; but we want
+> it to be the email present for all records (i.e. Not Null), and to be unique.
+
+<br>
+
+---
+
+<br>
+
+# DEFAULT Constraint
+
+**Note:** Some text & examples are taken from [W3Schools - MySQL DEFAULT Constraint](https://www.w3schools.com/mysql/mysql_default.asp)
+page.
+
+The `DEFAULT` constraint is used to automatically insert a default value for a
+column, if no value is specified.
+
+The default value will be added to all new records (if no other value is
+specified).
+
+### DEFAULT Constraint on CREATE TABLE
+
+The following SQL sets a `DEFAULT` value for the "City" column upon creation of
+the "Persons" table:
+
+```sql
+CREATE TABLE Persons (
+    ID int PRIMARY KEY,
+    LastName varchar(255) NOT NULL,
+    FirstName varchar(255),
+    Age int,
+    City varchar(255) DEFAULT 'Bengaluru'
+);
+```
+
+The `DEFAULT` constraint can also be used to insert system values, by using
+functions like `CURRENT_DATE()` to insert the current date:
+
+```sql
+CREATE TABLE Orders (
+    ID int PRIMARY KEY,
+    OrderNumber int NOT NULL,
+    OrderDate date DEFAULT CURRENT_DATE()
+);
+```
+
+### DEFAULT Constraint on ALTER TABLE
+
+To define a `DEFAULT` constraint on the "City" column when the table is already
+created, use the following SQL:
+
+```sql
+ALTER TABLE Persons
+ALTER City SET DEFAULT 'Bengaluru';
+```
+
+### DROP a DEFAULT Constraint
+
+To drop a `DEFAULT` constraint, use the following SQL:
+
+```sql
+ALTER TABLE Persons
+ALTER City DROP DEFAULT;
+```
+
+## ALTER TABLE Variants: ALTER COLUMN vs. MODIFY COLUMN vs. RENAME COLUMN vs. CHANGE COLUMN
+
+> **Note:** This section is LLM generated (Gemini). Beware of hallucinations.
+
+Here is your quick-review study sheet to clearly distinguish between these
+commands.
+
+To answer your direct question immediately:
+
+**No, `ALTER TABLE ... ALTER COLUMN` cannot change nullability (NULL/NOT NULL),
+data types, or sizes**.
+
+According to the [Official MySQL Documentation](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html),
+it is highly specialized and can only be used for two specific property types: [^1] [^2] 
+
+  1. **Setting / dropping a column's default value** (`SET DEFAULT` /
+     `DROP DEFAULT`).
+  2. **Changing column visibility** (`SET VISIBLE` / `SET INVISIBLE`)
+     available in MySQL 8.0+. [^1] [^2] [^3] [^4] 
+
+### 📝 MySQL Revision Notes: Modifying Columns [^5] 
+
+Think of your table column as an object with three attributes: a **Name**, a
+**Data Type/Size**, and **Properties** (Default values, Visibility). Choose
+your command based on exactly what you want to touch. [^6] [^7] 
+
+```txt
+       CHANGE COLUMN  ======> Modifies EVERYTHING (Name + Type + Defaults)
+      /      ||      \
+     /       ||       \
+    V        ||        V
+[ Name ]  [ Type ]  [ Default / Visibility ]
+    ^        ||        ^
+
+    |        ||        |
+RENAME    MODIFY     ALTER 
+COLUMN    COLUMN     COLUMN
+```
+
+### 1. ALTER COLUMN (The Surgical Tweaker)
+
+* **Intuition:** It surgically changes only the default value or the structural
+  visibility of a column. It leaves the name, data type, and constraints (
+  `NOT NULL`, `UNSIGNED`, etc.) completely untouched.
+* **Performance:** Extremely fast. It only alters table metadata without rebuilding
+  the entire table dataset.
+* **Examples:**
+  [^3] [^8]
+  ```sql
+  -- Set a default value:
+  ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active';
+
+  -- Remove a default value:
+  ALTER TABLE users ALTER COLUMN status DROP DEFAULT;
+
+  -- Hide a column from "SELECT *" (MySQL 8.0+):
+  ALTER TABLE users ALTER COLUMN social_security_num SET INVISIBLE;
+  ```
+
+### 2. MODIFY COLUMN (The Structural Transformer) [^7] 
+
+* **Intuition:** Used when you want to **change the definition** of the column
+  (data type, size, or nullability constraints) but want to
+  **keep the same name**.
+* **Catch:** You must write out the *entire* new definition. If you omit an
+  existing property (like `NOT NULL`), MySQL might drop it.
+* **Examples:**
+  [^2] [^4] [^9]
+  ```sql
+  -- Expand a column size and make it mandatory:
+  ALTER TABLE users MODIFY COLUMN username VARCHAR(100) NOT NULL;
+
+  -- Change data type entirely:
+  ALTER TABLE users MODIFY COLUMN age TINYINT UNSIGNED;
+  ```
+
+### 3. CHANGE COLUMN (The All-In-One Heavyweight)
+
+* **Intuition:** The legacy powerhouse that can **rename and structurally change**
+  a column at the same time.
+* **Syntax Quirk:** You must provide **both** the `old_column_name` *and* the
+  `new_column_name`, followed by the complete definition — even if you are
+  only trying to rename it.
+* **Examples:**
+  [^2] [^3] [^4] [^6] [^10]
+  ```sql
+  -- Rename AND change data type at the same time:
+  ALTER TABLE users CHANGE COLUMN user_pass password VARCHAR(255) NOT NULL;
+
+  -- Rename ONLY (Requires restating the unchanged data type):
+  ALTER TABLE users CHANGE COLUMN phone mobile_number VARCHAR(15);
+  ```
+
+### 4. RENAME COLUMN (The Pure Labeler)
+
+* **Intuition:** Added in MySQL 8.0 to fix the annoyance of `CHANGE COLUMN`. It
+  **only changes the name** of the column.
+* **Benefit:** You do not have to restate the data type, size, or properties.
+  They are preserved perfectly automatically.
+* **Examples:**
+  [^4] [^11] [^12]
+  ```sql
+  -- Clean and simple renaming:
+  ALTER TABLE users RENAME COLUMN fname TO first_name;
+  ```
+
+### ⏱️ Quick Memory Matrix
+
+| Command [^2] [^4] [^9] [^13] | Can Rename? | Can Change Type/Size? | Can Change NOT NULL? | Can Change Default? |
+|:---|:---:|:---:|:---:|:---:|
+| ALTER COLUMN | ❌ | ❌ | ❌ | ✔️ (Plus Visibility) |
+| MODIFY COLUMN | ❌ | ✔️ | ✔️ | ✔️ |
+| CHANGE COLUMN | ✔️ | ✔️ | ✔️ | ✔️ |
+| RENAME COLUMN | ✔️ | ❌ | ❌ | ❌ |
+
+### References
+
+[^1] [https://dev.mysql.com](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html)
+[^2] [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.0/en/alter-table-examples.html)
+[^3] [https://hoelz.ro](https://hoelz.ro/ref/mysql-alter-table-alter-change-modify-column)
+[^4] [https://stackoverflow.com](https://stackoverflow.com/questions/14767174/modify-column-vs-change-column)
+[^5] [https://www.youtube.com](https://www.youtube.com/watch?v=xEtUCsqgw8E)
+[^6] [https://stackoverflow.com](https://stackoverflow.com/questions/1356866/how-do-i-change-the-data-type-for-a-column-in-mysql)
+[^7] [https://www.geeksforgeeks.org](https://www.geeksforgeeks.org/mysql/mysql-alter-table-statement/)
+[^8] [https://dev.mysql.com](https://dev.mysql.com/blog-archive/mysql-8-0-innodb-now-supports-instant-add-column/)
+[^9] [https://www.w3schools.com](http://www.w3schools.com/mySQL/mysql_alter.asp)
+[^10] [https://www.techonthenet.com](https://www.techonthenet.com/mysql/tables/alter_table.php)
+[^11] [https://dev.mysql.com](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html)
+[^12] [https://www.w3schools.com](https://www.w3schools.com/sql/sql_alter.asp)
+[^13] [https://www.w3schools.com](http://www.w3schools.com/mySQL/mysql_alter.asp)
+
