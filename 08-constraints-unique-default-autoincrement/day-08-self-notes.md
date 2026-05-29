@@ -34,6 +34,17 @@ including itself."
 > defined, it cannot be compared for equality with any other value—including
 > another NULL.
 
+> [!NOTE]
+> Check below to see in action, how NULL doesn't compare equal to any value, not
+> even itself. And we instead need to use the **IS operator** in ways like
+> `IS NULL` and `IS NOT NULL` to check whether or not a value holds NULL.
+> ```sql
+> SELECT 19 = 19; -- Outputs: 1 (signifying boolean true value).
+> SELECT 19 = 11; -- Outputs: 0 (signifying boolean false value).
+> SELECT NULL = NULL; -- Outputs: NULL (signifying two empty values cannot be compared).
+> SELECT NULL IS NULL; -- Outputs: 1 (signifying boolean true value).
+> ```
+
 So, for the purpose of enforcing uniqueness for a UNIQUE Constraint, MySQL can't
 interpret two NULL values at the column in two records, as being the same value,
 according to the SQL Standard.
@@ -183,7 +194,7 @@ CREATE TABLE `customers` (
 > Constraint is useful in cases where the value of the column must be unique
 > across all records, and the column MUST have a value (i.e. it can't be empty or
 > NULL) for any record.
-> 
+>
 > For example, `customer_email` might be falling under this criteria. It need not
 > be selected as Primary Key, since for that we have `customer_id`; but we want
 > it to be the email present for all records (i.e. Not Null), and to be unique.
@@ -204,6 +215,12 @@ column, if no value is specified.
 
 The default value will be added to all new records (if no other value is
 specified).
+
+### SQL Standard History
+
+* **Standard:** Part of the official core **SQL-92** standard.
+* **Purpose:** Allowed developers to explicitly assign a column's default value
+  during data modification, instead of just omitting the column name.
 
 ### DEFAULT Constraint on CREATE TABLE
 
@@ -227,7 +244,101 @@ functions like `CURRENT_DATE()` to insert the current date:
 CREATE TABLE Orders (
     ID int PRIMARY KEY,
     OrderNumber int NOT NULL,
-    OrderDate date DEFAULT CURRENT_DATE()
+    OrderDate date DEFAULT (CURRENT_DATE())
+    -- ⬆️ Noticed the extra surrounding parenthesis around CURRENT_DATE?
+    -- This will be covered under using "expressions" as default value.
+);
+```
+
+### Default Value - Literals & Expressions
+
+> The default value specified in a DEFAULT clause can be **a literal constant**
+> *or* **an expression**.
+>
+> With one exception, **enclose expression default values within parentheses** to
+> distinguish them from literal constant default values.
+>
+> —— <cite>[MySQL 8.4 Reference Manual - Data Type Defaults](https://dev.mysql.com/doc/refman/8.4/en/data-type-defaults.html#data-type-defaults-explicit)</cite>
+
+Examples [^14]:
+
+```sql
+CREATE TABLE t1 (
+    -- literal defaults:
+    i INT         DEFAULT 0,
+    c VARCHAR(10) DEFAULT '',
+    -- expression defaults:
+    f FLOAT       DEFAULT (RAND() * RAND()),
+    b BINARY(16)  DEFAULT (UUID_TO_BIN(UUID())),
+    d DATE        DEFAULT (CURRENT_DATE + INTERVAL 1 YEAR),
+    p POINT       DEFAULT (Point(0,0)),
+    j JSON        DEFAULT (JSON_ARRAY())
+);
+```
+
+The exception is that, for `TIMESTAMP` and `DATETIME` columns, you can specify
+the `CURRENT_TIMESTAMP` function as the default, without enclosing parentheses.
+This allows for below column defintitions in the CREATE TABLE statements to be
+valid:
+
+```sql
+-- This is valid, the default value provided is an Expression,
+-- but for CURRENT_TIMESTAMP function, there is an exception
+-- to not require surrounding it with parentheses.
+CREATE TABLE t1 (
+  ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  dt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Below is also valid. This contains syntax for defining the
+-- column with "an auto-update value" using `ON UPDATE` clause:
+CREATE TABLE t1 (
+  ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  dt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+**Expressions provided as default value in DEFAULT Clause, must be enclosed within parentheses:**
+
+As stated earlier, aside from the exception case of `CURRENT_TIMESTAMP`
+function, other valid expressions supplied to DEFAULT Clause, must be enclosed
+within parentheses.
+
+This includes, for instance, the `CURDATE` / `CURRENT_DATE` / `CURDATE()` /
+`CURRENT_DATE()` function.
+
+Example of receiving error on not enclosing this within parentheses:
+
+```sql
+DROP TABLE IF EXISTS `orders`;
+
+-- Incorrect way below (not enclosing expression within parentheses):
+CREATE TABLE `orders` (
+  `order_id` INT PRIMARY KEY,
+  `customer_id` INT,
+  `product_id` INT,
+  `quantity` INT,
+  `order_date` DATE DEFAULT CURRENT_DATE -- This line gives error!
+
+  -- OR (Equivalent to above - all give same error):
+  -- `order_date` DATE DEFAULT CURRENT_DATE()
+  -- `order_date` DATE DEFAULT CURDATE
+  -- `order_date` DATE DEFAULT CURDATE()
+);
+-- Error Received:
+/*
+Error Code: 1064. You have an error in your SQL syntax; check the manual that
+  corresponds to your MySQL server version for the right syntax to use near
+  'CURRENT_DATE )' at line 6
+*/
+
+-- Correct way (enclosed within parentheses):
+CREATE TABLE `orders` (
+  `order_id` INT PRIMARY KEY,
+  `customer_id` INT,
+  `product_id` INT,
+  `quantity` INT,
+  `order_date` DATE DEFAULT (CURRENT_DATE)
 );
 ```
 
@@ -250,6 +361,54 @@ ALTER TABLE Persons
 ALTER City DROP DEFAULT;
 ```
 
+## Statements (other than CREATE TABLE) where DEFAULT is supported
+
+### A. INSERT Statements (Explicit Value)
+
+You can use `DEFAULT` as a placeholder value inside the `VALUES` clause.
+
+```sql
+INSERT INTO users (id, name, status) VALUES (1, 'Alice', DEFAULT);
+```
+
+* **PostgreSQL:** Fully supported.
+* **MySQL:** Fully supported.
+
+### B. INSERT Statements (Entire Row)
+
+Inserting a row consisting *entirely* of default values has syntax differences:
+
+* **PostgreSQL:** Uses the standard `DEFAULT VALUES` clause.
+  ```sql
+  INSERT INTO users DEFAULT VALUES;
+  ```
+* **MySQL:** Does **not** support the standard clause. You must pass an empty
+  values list instead.
+  ```sql
+  INSERT INTO users () VALUES ();
+  ```
+
+### C. UPDATE Statements
+
+You can reset an existing column back to its predefined default value.
+
+```sql
+UPDATE users SET status = DEFAULT WHERE id = 1;
+```
+
+* **PostgreSQL:** Fully supported.
+* **MySQL:** Fully supported.
+
+### Summary Cheat Sheet
+
+| Feature | PostgreSQL | MySQL |
+| :--- | :---: | :---: |
+| `VALUES (..., DEFAULT)` | ✅ Yes | ✅ Yes |
+| `SET col = DEFAULT` | ✅ Yes | ✅ Yes |
+| `DEFAULT VALUES` clause | ✅ Yes | ❌ No (Use `() VALUES ()`) |
+
+<br>
+
 ## ALTER TABLE Variants: ALTER COLUMN vs. MODIFY COLUMN vs. RENAME COLUMN vs. CHANGE COLUMN
 
 > **Note:** This section is LLM generated (Gemini). Beware of hallucinations.
@@ -263,18 +422,18 @@ To answer your direct question immediately:
 data types, or sizes**.
 
 According to the [Official MySQL Documentation](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html),
-it is highly specialized and can only be used for two specific property types: [^1] [^2] 
+it is highly specialized and can only be used for two specific property types: [^1] [^2]
 
   1. **Setting / dropping a column's default value** (`SET DEFAULT` /
      `DROP DEFAULT`).
   2. **Changing column visibility** (`SET VISIBLE` / `SET INVISIBLE`)
-     available in MySQL 8.0+. [^1] [^2] [^3] [^4] 
+     available in MySQL 8.0+. [^1] [^2] [^3] [^4]
 
-### 📝 MySQL Revision Notes: Modifying Columns [^5] 
+### 📝 MySQL Revision Notes: Modifying Columns [^5]
 
 Think of your table column as an object with three attributes: a **Name**, a
 **Data Type/Size**, and **Properties** (Default values, Visibility). Choose
-your command based on exactly what you want to touch. [^6] [^7] 
+your command based on exactly what you want to touch. [^6] [^7]
 
 ```txt
        CHANGE COLUMN  ======> Modifies EVERYTHING (Name + Type + Defaults)
@@ -285,7 +444,7 @@ your command based on exactly what you want to touch. [^6] [^7]
     ^        ||        ^
 
     |        ||        |
-RENAME    MODIFY     ALTER 
+RENAME    MODIFY     ALTER
 COLUMN    COLUMN     COLUMN
 ```
 
@@ -309,7 +468,7 @@ COLUMN    COLUMN     COLUMN
   ALTER TABLE users ALTER COLUMN social_security_num SET INVISIBLE;
   ```
 
-### 2. MODIFY COLUMN (The Structural Transformer) [^7] 
+### 2. MODIFY COLUMN (The Structural Transformer) [^7]
 
 * **Intuition:** Used when you want to **change the definition** of the column
   (data type, size, or nullability constraints) but want to
@@ -380,4 +539,5 @@ COLUMN    COLUMN     COLUMN
 [^11]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html)
 [^12]: [https://www.w3schools.com](https://www.w3schools.com/sql/sql_alter.asp)
 [^13]: [https://www.w3schools.com](http://www.w3schools.com/mySQL/mysql_alter.asp)
+[^14]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/data-type-defaults.html#data-type-defaults-explicit)
 
