@@ -104,11 +104,11 @@ INSERT INTO orders () VALUES ();
 
 -- Create `animals` table with the integer type `id` (MEDIUMINT)
 -- column having AUTO_INCREMENT attribute:
-DROP TABLE IF EXISTS animals;
-CREATE TABLE animals (
-     id MEDIUMINT NOT NULL AUTO_INCREMENT,
-     name CHAR(30) NOT NULL,
-     PRIMARY KEY (id)
+DROP TABLE IF EXISTS `animals`;
+CREATE TABLE `animals` (
+    `id` MEDIUMINT NOT NULL AUTO_INCREMENT,
+    `name` CHAR(30) NOT NULL,
+    PRIMARY KEY (`id`)
 );
 
 -- Insert two (2) records with two separate INSERTs:
@@ -164,3 +164,23 @@ SELECT LAST_INSERT_ID(); -- Returns 2.
 
 -- Verify if all records had their `employee_id` column populated:
 SELECT * FROM employees;
+
+-- ############ Choose custom value for AUTO_INCREMENT ##############
+
+-- ======== Using CREATE TABLE with Table Option ===========
+DROP TABLE IF EXISTS animals;
+
+CREATE TABLE `animals` (
+    `id` MEDIUMINT NOT NULL AUTO_INCREMENT,
+    `name` CHAR(30) NOT NULL,
+    PRIMARY KEY (`id`)
+) AUTO_INCREMENT=3001; -- Note: Here we supply the 'AUTO_INCREMENT' Table Option.
+-- Above we set desired initial AUTO_INCREMENT starting value.
+
+INSERT INTO animals (name) VALUES ('dog');
+INSERT INTO animals (name) VALUES ('cat');
+INSERT INTO animals (name) VALUES ('penguin');
+
+-- Verify if auto increment column starts at 3001:
+SELECT * FROM animals;
+SELECT LAST_INSERT_ID();

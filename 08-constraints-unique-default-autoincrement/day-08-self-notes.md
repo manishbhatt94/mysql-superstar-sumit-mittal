@@ -538,9 +538,9 @@ rows [^15]:
 ```sql
 DROP TABLE IF EXISTS animals;
 CREATE TABLE animals (
-     id MEDIUMINT NOT NULL AUTO_INCREMENT,
-     name CHAR(30) NOT NULL,
-     PRIMARY KEY (id)
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    name CHAR(30) NOT NULL,
+    PRIMARY KEY (id)
 );
 
 INSERT INTO animals (name) VALUES
@@ -565,6 +565,173 @@ Which outputs:
 +----+---------+
 ```
 
+No value was specified for the AUTO_INCREMENT column, so MySQL assigned
+sequence numbers automatically.
+<br>
+
+**Assign Special Literals (0 or NULL) to Auto Increment column to trigger MySQL to generate sequence numbers:**
+
+You can also explicitly assign 0 to the column to generate sequence numbers,
+unless the NO_AUTO_VALUE_ON_ZERO SQL mode is enabled. For example:
+
+```sql
+INSERT INTO animals (id,name) VALUES(0,'groundhog');
+```
+
+If the column is declared NOT NULL, it is also possible to assign NULL to the
+column to generate sequence numbers. For example:
+
+```sql
+INSERT INTO animals (id,name) VALUES(NULL,'squirrel');
+```
+<br>
+
+**Reset sequence when assigning out of sequence larger number:**
+
+When you insert any other value into an AUTO_INCREMENT column, the column is
+set to that value and the sequence is reset so that the next automatically
+generated value follows sequentially from the largest column value. For
+example:
+
+```sql
+INSERT INTO animals (id,name) VALUES(100,'rabbit');
+INSERT INTO animals (id,name) VALUES(NULL,'mouse');
+SELECT * FROM animals;
+```
+
+```txt
++-----+-----------+
+| id  | name      |
++-----+-----------+
+|   1 | dog       |
+|   2 | cat       |
+|   3 | penguin   |
+|   4 | lax       |
+|   5 | whale     |
+|   6 | ostrich   |
+|   7 | groundhog |
+|   8 | squirrel  |
+| 100 | rabbit    |
+| 101 | mouse     |
++-----+-----------+
+```
+
+Updating an existing AUTO_INCREMENT column value also resets the AUTO_INCREMENT
+sequence. 
+
+## Notes on AUTO_INCREMENT from MySQL Reference Manual [^16]
+
+- An integer column can have the additional attribute AUTO_INCREMENT.
+- AUTO_INCREMENT applies **only to** *integer types*.
+- There can be only one AUTO_INCREMENT column per table, it must be indexed, and
+  it cannot have a DEFAULT value.
+- An AUTO_INCREMENT column works properly only if it contains only positive
+  values.
+- AUTO_INCREMENT sequences begin with 1. This can be changed by changing the
+  *Table Option called `AUTO_INCREMENT`* to another positive integer.
+  ```sql
+  -- Setting Table Option "AUTO_INCREMENT"'s value to 100, using ALTER TABLE:
+  ALTER TABLE Persons AUTO_INCREMENT = 100;
+  ```
+- When inserting rows into the table with an AUTO_INCREMENT column, you don’t
+  need to specify a value for that column. MySQL will automatically generate the
+  value for you. [^17]
+- When you insert a value of NULL (recommended) or 0 into an indexed
+  AUTO_INCREMENT column, the column is set to the next sequence value.
+  Typically this is `value + 1`, where `value` is the largest value for the
+  column currently in the table. [^16]
+- To retrieve an AUTO_INCREMENT value after inserting a row, use the
+  `LAST_INSERT_ID()` SQL function.
+- For a multiple-row insert, `LAST_INSERT_ID()` actually return the
+  AUTO_INCREMENT key from the first of the inserted rows. This enables
+  multiple-row inserts to be reproduced correctly on other servers in a
+  replication setup.
+
+
+## Table Option: AUTO_INCREMENT [^16]
+
+This represents the initial AUTO_INCREMENT value for the table.
+
+To start with an AUTO_INCREMENT value other than 1, set that value with
+CREATE TABLE or ALTER TABLE, like described below.
+
+To set the first auto-increment value for engines that do not support the
+AUTO_INCREMENT table option, insert a "dummy" row with a value one less than the
+desired value after creating the table, and then delete the dummy row. That is:
+
+```sql
+-- If your MySQL engine doesn't support the AUTO_INCREMENT table option, and so
+-- you can't run this ALTER TABLE to set this Table Option:
+-- ALTER TABLE Persons AUTO_INCREMENT = 100;
+
+-- Pick the desired initial AUTO_INCREMENT value. Let it be N.
+-- Insert a "dummy" row with a value (N-1); then delete the dummy row:
+-- Let's say we want to start the numbering from 3001, i.e. N=3001.
+DROP TABLE IF EXISTS animals;
+CREATE TABLE animals (
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    name CHAR(30) NOT NULL,
+    PRIMARY KEY (id)
+);
+INSERT INTO animals VALUES (3000, 'dummy-animal'); -- Used 3000 which is (N-1).
+DELETE FROM animals;
+
+-- Now further inserts will start with desired initial value of N=3001 for the
+-- auto increment column:
+INSERT INTO animals (name) VALUES ('dog');
+```
+
+For engines that support the AUTO_INCREMENT table option in CREATE TABLE
+statements, you can also use `ALTER TABLE tbl_name AUTO_INCREMENT = N;` to reset
+the AUTO_INCREMENT value.
+
+The value cannot be set lower than the maximum value currently in the column.
+
+In CREATE TABLE statements, we can provide the Table Option as follows:
+```sql
+DROP TABLE IF EXISTS animals;
+CREATE TABLE animals (
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    name CHAR(30) NOT NULL,
+    PRIMARY KEY (id)
+) AUTO_INCREMENT=3001;
+
+-- Now insert three (3) records, one-by-one:
+INSERT INTO animals (name) VALUES ('dog');
+INSERT INTO animals (name) VALUES ('cat');
+INSERT INTO animals (name) VALUES ('penguin');
+
+-- Verify:
+SELECT * FROM animals;
+
+SELECT LAST_INSERT_ID();
+```
+
+## Auto Increment Sequence Reset - On deletion of all records?
+
+Running a `DELETE FROM table_name;` statement removes your data rows but
+intentionally preserves the internal sequence counter to maintain data
+integrity and prevent old IDs from being mixed up with new records.
+
+If you want to clear your data and completely reset the sequence back to 1,
+choose one of the options below based on your current setup.
+
+1. **Use TRUNCATE TABLE:** If you can afford to wipe the table instantly,
+   use `TRUNCATE TABLE`. This drops the table internally and recreates it,
+   automatically wiping both the records and resetting the counter to 1.
+   ```sql
+   TRUNCATE TABLE your_table_name;
+   ```
+1. **Manually Alter the Counter:** If you already used `DELETE FROM` and the
+   table is now empty, you can force-reset the internal counter manually with
+   an `ALTER TABLE` statement as we saw earlier.
+
+   ```sql
+   ALTER TABLE your_table_name AUTO_INCREMENT = 1;
+   ```
+
+<br>
+
 ---
 
 # References
@@ -584,4 +751,6 @@ Which outputs:
 [^13]: [https://www.w3schools.com](http://www.w3schools.com/mySQL/mysql_alter.asp)
 [^14]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/data-type-defaults.html#data-type-defaults-explicit)
 [^15]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/example-auto-increment.html)
+[^16]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/create-table.html)
+[^17]: [https://www.mysqltutorial.org](https://www.mysqltutorial.org/mysql-basics/mysql-auto_increment/)
 
