@@ -95,3 +95,72 @@ DESCRIBE orders;
 
 -- Insert record with all fields as their default value:
 INSERT INTO orders () VALUES ();
+
+
+
+-- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
+-- ##################### AUTO_INCREMENT ############################
+-- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
+
+-- Create `animals` table with the integer type `id` (MEDIUMINT)
+-- column having AUTO_INCREMENT attribute:
+DROP TABLE IF EXISTS animals;
+CREATE TABLE animals (
+     id MEDIUMINT NOT NULL AUTO_INCREMENT,
+     name CHAR(30) NOT NULL,
+     PRIMARY KEY (id)
+);
+
+-- Insert two (2) records with two separate INSERTs:
+INSERT INTO animals (name) VALUES ('cow');
+INSERT INTO animals (name) VALUES ('rabbit');
+
+SELECT * FROM animals;
+/*
++----+--------+
+| id | name   |
++----+--------+
+|  1 | cow    |
+|  2 | rabbit |
++----+--------+
+*/
+
+-- You can retrieve the most recent automatically generated AUTO_INCREMENT
+-- value with the LAST_INSERT_ID() SQL function:
+SELECT LAST_INSERT_ID(); -- Returns 2.
+
+-- Insert six (6) records in the table in a single INSERT,
+-- without specify values for `id` column:
+INSERT INTO animals (name) VALUES
+    ('dog'),('cat'),('penguin'),
+    ('lax'),('whale'),('ostrich');
+
+-- For a multiple-row insert, LAST_INSERT_ID() actually return the
+-- AUTO_INCREMENT key from the first of the inserted rows.
+-- This enables multiple-row inserts to be reproduced correctly
+-- on other servers in a replication setup. 
+SELECT LAST_INSERT_ID(); -- Returns 3.
+
+-- Verify if all records had their `id` column populated:
+SELECT * FROM animals;
+
+
+-- Create `employees` table with the integer `employee_id` (INT)
+-- column having AUTO_INCREMENT attribute:
+DROP TABLE IF EXISTS employees;
+CREATE TABLE employees (
+	employee_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    hire_date DATE
+);
+
+INSERT INTO employees (first_name, last_name, hire_date)
+	VALUES ('John', 'Doe', '2024-10-08');
+INSERT INTO employees (first_name, last_name, hire_date)
+	VALUES ('Jane', 'Smith', '2024-11-01');
+
+SELECT LAST_INSERT_ID(); -- Returns 2.
+
+-- Verify if all records had their `employee_id` column populated:
+SELECT * FROM employees;

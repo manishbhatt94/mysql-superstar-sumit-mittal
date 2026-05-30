@@ -524,7 +524,50 @@ COLUMN    COLUMN     COLUMN
 | CHANGE COLUMN | ✔️ | ✔️ | ✔️ | ✔️ |
 | RENAME COLUMN | ✔️ | ❌ | ❌ | ❌ |
 
-### References
+<br>
+
+---
+
+<br>
+
+# Using AUTO_INCREMENT
+
+The AUTO_INCREMENT attribute can be used to generate a unique identity for new
+rows [^15]:
+
+```sql
+DROP TABLE IF EXISTS animals;
+CREATE TABLE animals (
+     id MEDIUMINT NOT NULL AUTO_INCREMENT,
+     name CHAR(30) NOT NULL,
+     PRIMARY KEY (id)
+);
+
+INSERT INTO animals (name) VALUES
+    ('dog'),('cat'),('penguin'),
+    ('lax'),('whale'),('ostrich');
+
+SELECT * FROM animals;
+```
+
+Which outputs:
+
+```txt
++----+---------+
+| id | name    |
++----+---------+
+|  1 | dog     |
+|  2 | cat     |
+|  3 | penguin |
+|  4 | lax     |
+|  5 | whale   |
+|  6 | ostrich |
++----+---------+
+```
+
+---
+
+# References
 
 [^1]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/9.0/en/alter-table.html)
 [^2]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.0/en/alter-table-examples.html)
@@ -540,4 +583,5 @@ COLUMN    COLUMN     COLUMN
 [^12]: [https://www.w3schools.com](https://www.w3schools.com/sql/sql_alter.asp)
 [^13]: [https://www.w3schools.com](http://www.w3schools.com/mySQL/mysql_alter.asp)
 [^14]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/data-type-defaults.html#data-type-defaults-explicit)
+[^15]: [https://dev.mysql.com](https://dev.mysql.com/doc/refman/8.4/en/example-auto-increment.html)
 
