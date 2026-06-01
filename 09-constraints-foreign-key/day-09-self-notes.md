@@ -115,3 +115,15 @@ in the parent table.
 
 For an `ON DELETE` or `ON UPDATE` that is not specified, the default action is
 always `NO ACTION`.
+
+## Self-referencing Foreign Key
+
+> Content taken from: [https://www.mysqltutorial.org](https://www.mysqltutorial.org/mysql-basics/mysql-foreign-key/)
+
+
+Sometimes, the child and parent tables may refer to the same table. In this case, the foreign key references back to the primary key within the same table.
+
+See the following employees table:
+
+![Table `employees` has the self-referencing Foreign Key `reportsTo`](assets/images/fig-01-self-ref-foreign-key-employees.png "Figure: Table `employees` has the self-referencing Foreign Key `reportsTo`")
+*Figure: Table `employees` has the self-referencing Foreign Key `reportsTo`*

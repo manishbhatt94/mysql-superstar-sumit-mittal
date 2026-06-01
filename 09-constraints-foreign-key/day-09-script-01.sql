@@ -1,4 +1,4 @@
--- ====== "customers" <-> "orders" Table (One-To-Many) ========
+-- ############# "customers" <-> "orders" Table (One-To-Many) #################
 
 -- "Parent" / "Referenced" table `customers`:
 DROP TABLE IF EXISTS customers;
@@ -250,3 +250,114 @@ DELETE FROM customers WHERE customer_id = 1;
 -- Error Code: 1451. Cannot delete or update a parent row:
 --   a foreign key constraint fails
 --   (`retail_db`.`orders`, CONSTRAINT `orders_fk_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`))
+
+
+
+-- ############# "students" <-> "courses" Table (Many-To-Many) #################
+
+DROP TABLE IF EXISTS students;
+CREATE TABLE students (
+	student_id INT,
+	first_name VARCHAR(50),
+	last_name VARCHAR(50),
+	PRIMARY KEY (student_id)
+);
+
+DROP TABLE IF EXISTS courses;
+CREATE TABLE courses (
+	course_id INT,
+	course_name VARCHAR(100),
+	PRIMARY KEY (course_id)
+);
+
+DROP TABLE IF EXISTS enrollments;
+CREATE TABLE enrollments (
+	student_id INT,
+	course_id INT,
+	enrollment_date DATE,
+	PRIMARY KEY (student_id, course_id),
+	CONSTRAINT enrollments_fk_student_id
+		FOREIGN KEY (student_id) REFERENCES students (student_id),
+	CONSTRAINT enrollments_fk_course_id
+		FOREIGN KEY (course_id) REFERENCES courses (course_id)
+);
+
+-- ==== Insert records: ======
+
+-- One student; and one course:
+INSERT INTO students (student_id, first_name, last_name) VALUES
+	(1, 'Alice', 'Johnson');
+INSERT INTO courses (course_id, course_name) VALUES
+	(61001, 'Set Theory 101');
+
+-- Valid record, since both foreign key values are present in
+-- the respective referenced tables:
+INSERT INTO enrollments (student_id, course_id, enrollment_date) VALUES
+	(1, 61001, '2023-08-29');
+
+TABLE students; -- SELECT * FROM students;
+TABLE courses;
+TABLE enrollments;
+
+-- INVALID record! since both value for Foreign Key (course_id = 3535)
+-- is not present in the referenced "courses" table:
+INSERT INTO enrollments (student_id, course_id, enrollment_date) VALUES
+	(1, 3535, '2023-08-29');
+-- This INSERT fails with below error:
+-- Error Code: 1452. Cannot add or update a child row:
+--   a foreign key constraint fails
+--   (`retail_db`.`enrollments`, CONSTRAINT `enrollments_fk_course_id` FOREIGN KEY (`course_id`) REFERENCES `courses` (`course_id`))
+
+
+-- ############# Self Referencing Foreign Key #################
+-- ==> `manager_id` column (within "employees" table) is an example
+-- of a Self Referencing Foreign Key.
+
+DROP TABLE IF EXISTS employees;
+CREATE TABLE employees (
+	employee_id INT,
+	first_name VARCHAR(50),
+	last_name VARCHAR(50),
+    manager_id INT,
+    PRIMARY KEY (employee_id)
+);
+
+TABLE employees; -- MySQL specific (non-standard SQL) equivalent to SELECT * FROM employees;
+
+-- Insert the 1st employee record (manager can only be NULL, as of now):
+INSERT INTO employees (employee_id, first_name, last_name, manager_id)
+	VALUES (1, 'John', 'Doe', NULL);
+-- Works fine!
+
+-- Insert the 2nd employee record. Here manager has been specified as
+-- the record with (employee_id = 1) which exists in the table:
+INSERT INTO employees (employee_id, first_name, last_name, manager_id)
+	VALUES (2, 'Jane', 'Smith', 1);
+-- Works fine!
+
+-- Invalid row - manager_id is being set to record with (employee_id = 1)
+-- which doesn't yet exist. But we haven't yet added Foreign Key constraint
+-- so this INSERT will be accepted.
+INSERT INTO employees (employee_id, first_name, last_name, manager_id)
+	VALUES (3, 'Alice', 'Johnson', 599);
+-- Works b'coz we haven't added the FK constraint yet.
+
+-- Let's delete the INVALID record (3, 'Alice', 'Johnson', 599) that
+-- got inserted above, before adding the constraint
+DELETE FROM employees WHERE employee_id = 3;
+
+ALTER TABLE employees ADD CONSTRAINT employees_fk_manager_id
+	FOREIGN KEY (manager_id) REFERENCES employees (employee_id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE;
+-- Now FK constraint is successfully added!
+
+-- Let's try inserting that invalid (3, 'Alice', 'Johnson', 599) record
+-- again, to verify if our new constraint prevents insertion:
+INSERT INTO employees (employee_id, first_name, last_name, manager_id)
+	VALUES (3, 'Alice', 'Johnson', 599);
+-- As expected, above INSERT fails with:
+-- Error Code: 1452. Cannot add or update a child row:
+--   a foreign key constraint fails
+--   (`retail_db`.`employees`, CONSTRAINT `employees_fk_manager_id` FOREIGN KEY (`manager_id`) REFERENCES `employees` (`employee_id`) ON DELETE SET NULL ON UPDATE CASCADE)
+
