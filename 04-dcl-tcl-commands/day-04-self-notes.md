@@ -8,6 +8,15 @@ Some keyword acronyms of **Types of SQL Commands**:
 4. **DCL (Data Control Language)** - SQL commands used for controlling access to database, like create DB users/roles, granting them permissions, revoking their permissions. E.g. CREATE USER, GRANT, REVOKE, and similar. These commands are normally used by DBAs only.
 5. **TCL (Transaction Control Language)** - SQL commands used for manually handling transactions - when to commit, when to rollback. E.g. COMMIT, ROLLBACK.
 
+You can also read [https://www.geeksforgeeks.org/sql/sql-ddl-dql-dml-dcl-tcl-commands/](https://www.geeksforgeeks.org/sql/sql-ddl-dql-dml-dcl-tcl-commands/)
+
+
+![SQL Statements Categorized](assets/images/fig-01-sql-statements-categorized.webp "Figure: SQL Statements Categorized")
+
+*Figure: SQL Statements Categorized*
+
+<br>
+
 ## Giving granular table access to Analytics Firm “AnalyticX”
 
 Let’s say we have below `customers` table:
