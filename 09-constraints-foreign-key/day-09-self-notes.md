@@ -126,4 +126,5 @@ Sometimes, the child and parent tables may refer to the same table. In this case
 See the following employees table:
 
 ![Table `employees` has the self-referencing Foreign Key `reportsTo`](assets/images/fig-01-self-ref-foreign-key-employees.png "Figure: Table `employees` has the self-referencing Foreign Key `reportsTo`")
+
 *Figure: Table `employees` has the self-referencing Foreign Key `reportsTo`*
