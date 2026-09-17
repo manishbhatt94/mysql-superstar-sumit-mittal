@@ -442,7 +442,7 @@ your command based on exactly what you want to touch. [^6] [^7]
     V        ||        V
 [ Name ]  [ Type ]  [ Default / Visibility ]
     ^        ||        ^
-
+    |        ||        |
     |        ||        |
 RENAME    MODIFY     ALTER
 COLUMN    COLUMN     COLUMN
