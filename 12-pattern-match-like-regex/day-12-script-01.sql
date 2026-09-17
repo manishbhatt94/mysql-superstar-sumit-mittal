@@ -58,6 +58,8 @@ VALUES
 
 SELECT * FROM employees;
 
+-- ############### LIKE Operator (Wildcards: '_' and '%') ####################
+
 -- LIKE Operator Wildcards (% and _):
 /*
 % (Percent sign):
@@ -131,3 +133,93 @@ SELECT * FROM employees WHERE email LIKE '%&%%' ESCAPE '&';
 -- expression LIKE pattern ESCAPE escape_character
 
 SELECT 'manish_sql' LIKE '%\_%'; -- Matches (Result is 1, not 0)
+
+
+-- ############### REGULAR EXPRESSIONS ####################
+
+-- Get all employees whose `first_name` starts with either of these
+-- letters 'A' or 'B' or 'C' or 'D':
+
+-- Without REGEX (only using LIKE):
+SELECT * FROM employees WHERE
+	first_name LIKE 'A%' OR
+    first_name LIKE 'B%' OR
+    first_name LIKE 'C%' OR
+    first_name LIKE 'D%';
+
+-- ========= Using MySQL REGEXP operator =============
+-- Syntax: expression REGEXP pattern
+
+-- Get all employees whose `first_name` starts with either of these
+-- letters 'A' or 'B' or 'C' or 'D':
+SELECT * FROM employees WHERE
+	first_name REGEXP '^[ABCD]';
+-- (In regex, '^' matches start of string, and '$' matches end of string)
+
+SELECT 'Derek' REGEXP '^[ABCD]';
+SELECT 'Derek' REGEXP '^[ABCD].+';
+SELECT 'D' REGEXP '^[ABCD].+';
+SELECT 'Dr' REGEXP '^[ABCD].?$';
+SELECT 'D' REGEXP '^[ABCD].?$';
+SELECT 'Dre' REGEXP '^[ABCD].?$';
+
+-- Get all employees whose `first_name` starts with either of these
+-- letters 'r' or 'y' or 'm':
+SELECT * FROM employees WHERE first_name REGEXP '[rym]$';
+
+-- Get all employees whose `first_name` has a vowel (a/e/i/o/u)
+-- at the 2nd (second) character:
+SELECT * FROM employees WHERE first_name REGEXP '^.[aeiou]';
+
+-- Get all employees whose `first_name` DOES NOT has a vowel (a/e/i/o/u)
+-- at the 2nd (second) character:
+SELECT * FROM employees WHERE first_name NOT REGEXP '^.[aeiou]';
+
+
+-- Simple Email pattern matching using simple REGEXP
+-- Rules:
+-- username@domain.tld
+-- username:
+--    Allowed Characters: a-z 0-9 . _
+--    Starts With: An alphabet (a-z)
+--    Length: 1 or more characters
+-- domain:
+--    Allowed Characters: a-z 0-9
+--    Starts With: An alphabet (a-z)
+--    Length: 1 or more characters
+-- tld:
+--    Allowed Characters: a-z
+--    Length: 2 or more characters
+
+-- Below pattern doesn't validate for starting character must be
+-- an alphabet letter:
+SELECT '^[a-z0-9._]+@[a-z0-9]+\\.[a-z]{2,}';
+SELECT '7zip@sad.why' REGEXP '^[a-z0-9._]+@[a-z0-9]+\\.[a-z]{2,}'; -- True
+
+-- Below pattern also checks for above "Starts With" condition:
+SELECT '^[a-z][a-z0-9._]*@[a-z][a-z0-9]*\\.[a-z]{2,}';
+SELECT '7zip@sad.why' REGEXP '^[a-z][a-z0-9._]*@[a-z][a-z0-9]*\\.[a-z]{2,}'; -- False
+SELECT 'yo.7_zip@sad.why' REGEXP '^[a-z][a-z0-9._]*@[a-z][a-z0-9]*\\.[a-z]{2,}'; -- True
+
+SELECT 'hello.world' REGEXP '^[a-z]+\\.[a-z]+$'; -- True
+SELECT 'hello?world' REGEXP '^[a-z]+\\.[a-z]+$'; -- False
+
+-- Get all employees whose `first_name` is exactly 3 characters long:
+SELECT * FROM employees WHERE first_name REGEXP '^...$';
+-- (Above: Used three dot characters in regex along with string begin & end anchors ^ and $)
+
+-- Get all employees whose `first_name` is at-least 7 characters long:
+SELECT * FROM employees WHERE last_name REGEXP '.......';
+-- (Above: Used seven dot characters in regex)
+
+-- Negated Character Set (Place ^ right after opening square bracket):
+SELECT '3w' REGEXP '^[^0-9][a-z0-9]+$'; -- False
+SELECT '3weed' REGEXP '^[^0-9][a-z0-9]+$'; -- False
+SELECT 'w33d' REGEXP '^[^0-9][a-z0-9]+$'; -- True
+
+-- Escaping hyphen in Character Set []:
+-- (Below: Only match either 'a', 'z' or '-')
+-- (Note: we needed double back-slash in character set [] since
+-- single would match the back-slash literally)
+SELECT 'bull' REGEXP '[a\\-z]+'; -- False (Hyphen is escaped and matched literally).
+SELECT 'azzzaaa--aazz-zazz---aa--' REGEXP '[a\\-z]+'; -- True
