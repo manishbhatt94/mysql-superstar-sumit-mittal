@@ -104,3 +104,49 @@ SELECT customer_state, COUNT(*) FROM customers
 SELECT customer_state, COUNT(*) FROM customers
 	GROUP BY customer_state HAVING COUNT(*) > 300
     ORDER BY COUNT(*) DESC;
+
+
+-- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
+-- #@#@##@#@##@#@##@#@#@# ORDER BY Clause #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#@
+-- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
+
+
+-- Create "orders" table and import data into it from CSV file "orders.csv"!
+
+-- Read file cli-fast-csv-import.md at this repository's root folder, to recall data import
+-- procedure using CLI.
+
+CREATE TABLE `retail_db`.`orders` (
+  `order_id` INT NOT NULL AUTO_INCREMENT,
+  `order_date` DATE NOT NULL,
+  `customer_id` INT NULL,
+  `order_status` VARCHAR(40) NULL,
+  PRIMARY KEY (`order_id`),
+  INDEX `fk_customer_id_idx` (`customer_id` ASC) VISIBLE,
+  CONSTRAINT `fk_customer_id`
+    FOREIGN KEY (`customer_id`)
+    REFERENCES `retail_db`.`customers` (`customer_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+/*
+LOAD DATA LOCAL INFILE 'C:/Users/Manish/Dev/SQL/mysql-superstar/datasets/Extracted-01/orders.csv'
+INTO TABLE retail_db.orders
+FIELDS TERMINATED BY ',' 
+OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'    -- Use '\r\n' when CSV file has Windows style line endings.
+IGNORE 1 LINES
+(order_id, order_date, customer_id, order_status);
+*/
+
+/*
+LOAD DATA LOCAL INFILE 'C:/Users/Manish/Dev/SQL/mysql-superstar/datasets/Extracted-01/orders.csv'
+INTO TABLE retail_db.orders
+FIELDS TERMINATED BY ','
+OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n'    -- Use '\n' when CSV file has Unix style line endings.
+IGNORE 1 LINES
+(order_id, order_date, customer_id, order_status);
+*/

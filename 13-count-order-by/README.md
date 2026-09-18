@@ -3,6 +3,8 @@
 Video Link:
 https://www.youtube.com/watch?v=3wLsP6zDsfA
 
+<br>
+
 ---
 
 ## COUNT(...) Aggregate Function
@@ -104,3 +106,7 @@ SELECT
 FROM
     orders;
 ```
+
+<br>
+
+---
