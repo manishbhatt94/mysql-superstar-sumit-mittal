@@ -110,3 +110,36 @@ FROM
 <br>
 
 ---
+
+
+## ORDER BY
+
+
+### ORDER BY clause to sort data using a custom list
+
+Reference: [https://www.mysqltutorial.org/mysql-basics/mysql-order-by/#using-mysql-order-by-clause-to-sort-data-using-a-custom-list](https://www.mysqltutorial.org/mysql-basics/mysql-order-by/#using-mysql-order-by-clause-to-sort-data-using-a-custom-list)
+
+
+> <u>**MySQL** `FIELD()` function:</u>
+> MySQL `FIELD()` function  returns the index (1-based position) of a value within a list of values.
+> Syntax:
+> ```sql
+> FIELD(value, value1, value2, ...)
+> ```
+>
+> In this syntax:
+> - `value`: The value for which you want to find the position.
+> - `value1, value2, ...`: A list of values against which you want to compare the specified value.
+>
+> The `FIELD()` function returns the position of the `value` in the list of values
+> (`value1, value2, ...` and so on).
+>
+> If the value is not found in the list, the `FIELD()` function returns **0**.
+>
+> Example:
+> ```sql
+> SELECT FIELD(degree_result, 'Honours', 'Distinction', 'First Division', 'Second Division', 'Passed');
+> -- Here if `degree_result` has a value in this above list (i.e. 'Honours', 'Distinction',
+> -- 'First Division', 'Second Division', 'Passed'), then we get the position number as return, else
+> -- we get zero.
+> ```

@@ -98,12 +98,12 @@ SELECT COUNT(DISTINCT customer_state) FROM customers; -- Returns 44.
 -- Get count of customers per state:
 SELECT customer_state, COUNT(*) FROM customers
 	GROUP BY customer_state
-    ORDER BY COUNT(*) DESC;
+	ORDER BY COUNT(*) DESC;
 
 -- Select states from which there are more than 300 customers:
 SELECT customer_state, COUNT(*) FROM customers
 	GROUP BY customer_state HAVING COUNT(*) > 300
-    ORDER BY COUNT(*) DESC;
+	ORDER BY COUNT(*) DESC;
 
 
 -- #@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@##@#@#
@@ -124,10 +124,10 @@ CREATE TABLE `retail_db`.`orders` (
   PRIMARY KEY (`order_id`),
   INDEX `fk_customer_id_idx` (`customer_id` ASC) VISIBLE,
   CONSTRAINT `fk_customer_id`
-    FOREIGN KEY (`customer_id`)
-    REFERENCES `retail_db`.`customers` (`customer_id`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
+	FOREIGN KEY (`customer_id`)
+	REFERENCES `retail_db`.`customers` (`customer_id`)
+	ON DELETE RESTRICT
+	ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -150,3 +150,82 @@ LINES TERMINATED BY '\n'    -- Use '\n' when CSV file has Unix style line ending
 IGNORE 1 LINES
 (order_id, order_date, customer_id, order_status);
 */
+
+SELECT COUNT(*) FROM orders; -- Result: 68,883.
+
+-- Get `employees` in descending order of the `salary` column values:
+SELECT * FROM employees ORDER BY salary DESC;
+
+-- Order `employees` in ascending order of their `first_name`:
+SELECT * FROM employees ORDER BY first_name ASC;
+-- Here, ASC is implicit, and we can omit it if we need ascending order:
+SELECT * FROM employees ORDER BY first_name;
+
+-- Order `employees` in descending order of their `salary`, and
+-- then (if two or more records have `salary` value as same) in
+-- ascending order of `department_id`:
+SELECT * FROM employees ORDER BY salary DESC, department_id ASC;
+
+-- We can ORDER BY column(s) of a table, which we have excluded from
+-- the SELECT column list:
+SELECT employee_id, first_name, last_name FROM employees
+	ORDER BY salary DESC;
+-- Above, we order by `salary` column, which we excluded from the
+-- SELECT column-list; and this is perfectly valid & is allowed!
+
+-- Using ORDER BY on a derived column (like the result of a calculation):
+
+-- ORDER BY using an expression (not a column name)
+SELECT 
+	employee_id,
+	first_name,
+	salary,
+	salary * 1.10 AS salary_with_10_percent_hike
+FROM employees
+ORDER BY salary * 1.10 DESC;   -- ← expression (instead of a column) works fine in ORDER BY
+
+-- Order by the length of the full name
+SELECT 
+	first_name,
+	last_name,
+	salary
+FROM employees
+ORDER BY LENGTH(CONCAT(first_name, ' ', last_name)) DESC;
+
+-- Get count of unique `order_status` values in the data
+-- present in `orders` table:
+SELECT COUNT(DISTINCT order_status) FROM orders; -- Result: 9.
+
+SELECT DISTINCT order_status FROM orders;
+
+-- ORDER BY in custom order (using MySQL's FIELD() function):
+SELECT * FROM orders
+ORDER BY
+	FIELD(
+		order_status,
+		'PAYMENT_REVIEW',
+		'PENDING_PAYMENT',
+		'PENDING',
+		'PROCESSING',
+		'ON_HOLD',
+		'SUSPECTED_FRAUD',
+		'CLOSED',
+		'COMPLETE',
+		'CANCELED'
+	);
+
+-- ORDER BY in custom order (using standard SQL's CASE WHEN):
+SELECT * FROM orders
+ORDER BY
+	CASE
+		WHEN order_status = 'PAYMENT_REVIEW' THEN 1
+		WHEN order_status = 'PENDING_PAYMENT' THEN 2
+		WHEN order_status = 'PENDING' THEN 3
+		WHEN order_status = 'PROCESSING' THEN 4
+		WHEN order_status = 'ON_HOLD' THEN 5
+		WHEN order_status = 'SUSPECTED_FRAUD' THEN 6
+		WHEN order_status = 'CLOSED' THEN 7
+		WHEN order_status = 'COMPLETE' THEN 8
+		WHEN order_status = 'CANCELED' THEN 9
+		ELSE 50
+	END;

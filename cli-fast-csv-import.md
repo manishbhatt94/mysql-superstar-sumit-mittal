@@ -191,6 +191,17 @@ DESCRIBE orders\G
 
 It’s purely a client-side display trick — it does not change the SQL itself.
 
+`\G` is **not** standard SQL and not part of the ANSI SQL standard.
+
+It is a **MySQL client-specific** feature (available in the classic `mysql` command-line client and
+also in MySQL Shell client i.e. `mysqlsh`).
+
+- It is processed by the MySQL client program before the statement is even sent to the MySQL server.
+- The MySQL server itself never sees the `\G` — it only receives the SQL statement.
+- Other database systems (PostgreSQL, SQL Server, Oracle, SQLite, etc.) do not understand `\G`.
+
+So it’s purely a convenience formatting option of the MySQL command-line tools, not real SQL syntax.
+
 
 ---
 
