@@ -203,3 +203,154 @@ FROM → JOIN/ON → WHERE → GROUP BY → aggregates → HAVING → SELECT →
 ```
 
 Memorizing this pipeline resolves most "why is my SQL query throwing an error" confusion.
+
+<br>
+
+---
+
+<br>
+
+# Appendix
+
+## Appendix 1. Why Filtering in `WHERE` Can Silently Turn a `LEFT JOIN` Into an `INNER JOIN`
+
+This Appendix explains the idea discussed under **Section 3.5** with heading:
+> 3.5 `WHERE` cannot reference `SELECT`-only computed columns; `JOIN...ON` runs before `WHERE`
+
+
+This is one of the most common **silent bugs** in real-world SQL — your query
+runs fine, returns no error, but quietly gives you the *wrong* rows. Let's
+unpack it slowly, using our Students/Clubs story with one small addition.
+
+### Extending Our Story Slightly
+
+Let's say some clubs get **disbanded** over time (lack of funding, no teacher
+supervisor, etc.), but old membership records stay in the database. We add one
+new column to `clubs`:
+
+| club_id | club_name        | is_active |
+|---------|-------------------|-----------|
+| 1       | Photography Club | TRUE      |
+| 2       | Robotics Club    | **FALSE** (disbanded this year) |
+| 3       | Drama Club       | TRUE      |
+| 4       | Debate Club      | TRUE      |
+
+Students, same as before:
+
+| student_name | club_id |
+|--------------|---------|
+| Aarav        | 1 (Photography) |
+| Priya        | 1 (Photography) |
+| Kabir        | 2 (Robotics — disbanded) |
+| Sneha        | NULL (no club)   |
+| Vikram       | 3 (Drama) |
+
+### The Task
+
+The school wants to print **this year's full student roster** — every single
+student must appear, no exceptions — but the club name should only show up if
+that club is **still running this year**. If a student's club got disbanded
+(like Kabir's), or they never had a club (like Sneha), just leave the club
+name blank. Nobody should vanish from the roster.
+
+This screams `LEFT JOIN` — "keep every student, no matter what." The only
+question is: **where do we put the `is_active = TRUE` condition?**
+
+
+### Option A: Filter Inside `ON` (Correct)
+
+```sql
+SELECT s.student_name, c.club_name
+FROM students s
+LEFT JOIN clubs c ON s.club_id = c.club_id AND c.is_active = TRUE;
+```
+
+**Think of `ON` as the "matching rulebook" — it decides what counts as a real
+match, *before* the LEFT JOIN's safety net kicks in.** Here, the rulebook says:
+*"Only count it as a real match if the club_id lines up **AND** the club is
+active."* Kabir's Robotics Club fails that second part, so — as far as this
+join is concerned — Kabir simply **has no matching club**. But that's totally
+fine, because `LEFT JOIN`'s whole job is to keep the student anyway, just with
+blank club info.
+
+**Result — all 5 students present, exactly as intended:**
+
+| student_name | club_name         |
+|--------------|--------------------|
+| Aarav        | Photography Club  |
+| Priya        | Photography Club  |
+| Kabir        | NULL (blank)       |
+| Sneha        | NULL (blank)       |
+| Vikram       | Drama Club        |
+
+
+
+### Option B: Filter Inside `WHERE` (The Silent Bug)
+
+```sql
+SELECT s.student_name, c.club_name
+FROM students s
+LEFT JOIN clubs c ON s.club_id = c.club_id
+WHERE c.is_active = TRUE;
+```
+
+Looks almost identical, right? But this small change breaks everything.
+Here's why — remember, **`WHERE` always runs *after* the join is already
+finished** (this is the Logical Execution Order from earlier in your notes:
+`FROM`/`JOIN` happens in step 1–2, `WHERE` is step 3).
+
+So let's walk through it in two separate phases, exactly as the database does:
+
+**Phase 1 — The `LEFT JOIN` runs first, with no filtering yet:**
+
+| student_name | club_name (matched) | is_active |
+|--------------|----------------------|-----------|
+| Aarav        | Photography Club    | TRUE      |
+| Priya        | Photography Club    | TRUE      |
+| Kabir        | Robotics Club       | **FALSE**    |
+| Sneha        | NULL (no match found) | **NULL**  |
+| Vikram       | Drama Club          | TRUE      |
+
+Notice: at this point, the `LEFT JOIN` **did its job correctly** — all 5
+students are still here. Kabir got matched to Robotics Club (a real match —
+the `ON` here only checks `club_id`, nothing else). Sneha got `NULL`s because
+she genuinely has no club.
+
+**Phase 2 — `WHERE c.is_active = TRUE` now filters this table, row by row,
+with zero awareness that this data came from a LEFT JOIN:**
+
+- Aarav → `is_active = TRUE` → ✅ keep
+- Priya → `is_active = TRUE` → ✅ keep
+- Kabir → `is_active = FALSE` → ❌ **removed** (fails the condition)
+- Sneha → `is_active = NULL` → ❌ **removed** (comparing anything to `NULL`
+  is never `TRUE` — it's treated as "unknown," which `WHERE` throws away)
+- Vikram → `is_active = TRUE` → ✅ keep
+
+**Final result — only 3 students left:**
+
+| student_name | club_name         |
+|--------------|--------------------|
+| Aarav        | Photography Club  |
+| Priya        | Photography Club  |
+| Vikram       | Drama Club        |
+
+**Kabir and Sneha are both gone** — silently. No error, no warning. The query
+*looks* like a `LEFT JOIN` in your code, but it *behaves* exactly like an
+`INNER JOIN` — because `WHERE` ended up demanding that every surviving row
+have a real, matching, active club. That's the exact same requirement an
+`INNER JOIN` enforces.
+
+
+### The One-Sentence Takeaway
+
+> **`ON` filters *while deciding what counts as a match* (so `LEFT JOIN` can
+> still protect unmatched rows with `NULL`s). `WHERE` filters *after* the match
+> is already decided (so it has no idea those `NULL`s were an intentional
+> safety net — it just sees a failed condition and throws the row away).**
+
+**Simple rule of thumb going forward:** if you're using `LEFT JOIN` specifically
+*because* you want to keep unmatched left-side rows (like Sneha, or students in
+disbanded clubs), then **any condition about the right-hand table (`clubs`)
+must go inside `ON`, never inside `WHERE`.** The moment a right-table condition
+lands in `WHERE`, you've accidentally rebuilt an `INNER JOIN`.
+
