@@ -354,3 +354,120 @@ disbanded clubs), then **any condition about the right-hand table (`clubs`)
 must go inside `ON`, never inside `WHERE`.** The moment a right-table condition
 lands in `WHERE`, you've accidentally rebuilt an `INNER JOIN`.
 
+---
+
+## Appendix 2. How Can `ORDER BY` Use a Column Not in `SELECT`? (Resolving the Apparent Contradiction)
+
+This is a genuinely sharp question — and the confusion comes from a slightly
+too-literal reading of "logical order of execution." Let's fix that mental
+model.
+
+### The Wrong Mental Model (understandably, what you assumed)
+
+> "SELECT happens before ORDER BY → SELECT must physically shrink each row
+> down to only the selected columns → ORDER BY then only receives that
+> shrunk-down data → so how can it sort by a column that got thrown away?"
+
+This is logical, but it's based on a mental picture that's slightly off: that
+`SELECT` **deletes** the non-selected columns from each row before passing
+data downstream. It doesn't. Let's replace that picture with a more accurate one.
+
+### The Correct Mental Model: A Conveyor Belt Carrying Full Boxes
+
+Picture your query as a **conveyor belt** in a factory. Each "box" moving
+along the belt is one row, and — this is the key part — **the box still
+contains every single column from the original table(s)**, all the way from
+`FROM` through `WHERE`, even after it passes the `SELECT` station.
+
+```
+FROM/JOIN → WHERE → GROUP BY/HAVING → SELECT → ORDER BY → LIMIT → (final output)
+   📦          📦          📦          📦       📦       📦        🧾
+ full box   full box    full box    full box,     sorts     trims    print receipt
+                                    PLUS a        using     to the   - returns only
+                                    "receipt"     any       final    selected columns
+                                    🧾 label     column,   rows
+                                    is prepared   selected
+                                                  or not
+```
+
+
+Here's what actually happens at each station:
+
+- **`FROM`/`JOIN`/`WHERE`/`GROUP BY`:** the full box (every column) moves
+  through, getting filtered/grouped along the way.
+- **`SELECT`:** this station doesn't strip the box down. It just **prepares
+  the final printed receipt** — deciding which columns (and computed
+  expressions/aliases) will actually be shown to the customer at the very end.
+  The box itself, with all its original columns, keeps moving down the belt.
+- **`ORDER BY`:** this station comes right after `SELECT`, and it can still
+  reach into the **full box** — not just the receipt — to sort by *any*
+  column that survived `WHERE`/`GROUP BY`, whether or not it made it onto the
+  receipt.
+- **Only at the very end**, after sorting and `LIMIT` are done, does the
+  system actually **print the receipt** (i.e., return only the `SELECT`ed
+  columns to you) and throw the rest of the box away.
+
+So `SELECT`'s real logical role isn't "shrink the row" — it's **"decide what
+gets displayed in the final output,"** which is a separate concern from "what
+data is still available for later clauses like `ORDER BY` to use."
+
+### Walking Through An Example
+
+```sql
+SELECT first_name
+FROM employees
+WHERE job_title != 'Manager'
+ORDER BY salary DESC
+LIMIT 5;
+```
+
+1. `FROM employees` → full rows, every column (`first_name`, `salary`,
+   `job_title`, `employee_id`, everything).
+2. `WHERE job_title != 'Manager'` → filters down to fewer full rows — still
+   every column intact, just fewer boxes on the belt.
+3. `SELECT first_name` → prepares the "receipt template": *"only print
+   `first_name` at the end."* But the full rows (including `salary`) keep
+   moving down the belt.
+4. `ORDER BY salary DESC` → reaches into the still-full rows and sorts them
+   by `salary`, even though `salary` isn't on the receipt.
+5. `LIMIT 5` → keeps only the top 5 sorted boxes.
+6. **Only now** does the system actually print the receipt — outputting just
+   `first_name` for those 5 rows, discarding `salary` from the visible result.
+
+**Real-life analogy to make this stick:** Imagine asking an assistant,
+*"Give me the names of the 5 highest-paid non-manager employees."* Your
+assistant obviously has to **look at salary** to figure out who the top 5 even
+are — they just don't write the salary number down on the final list they
+hand you. Looking at data to determine order, and choosing what to print, are
+two different jobs. `ORDER BY` needs to *look*; `SELECT` decides what to
+*print*. Nothing stops the "looking" step from using a column the "printing"
+step leaves out.
+
+### So Why DOES `DISTINCT` Break This, Then?
+
+This is the one exception you already learned, and now you can understand
+*why* it's an exception, using the conveyor belt picture.
+
+`DISTINCT` doesn't just prepare a receipt template — it actually **merges
+multiple boxes into one**, based only on the receipt columns. Say two
+different employees, "Aarav" and "Aarav" (same first name, different
+salaries), both end up on the receipt as just `"Aarav"`. `DISTINCT` looks at
+the receipt-only view, sees two identical `"Aarav"` entries, and **collapses
+them into a single box** — but now, whose salary does that merged box even
+belong to? Aarav-1's, or Aarav-2's? There's no correct answer — **the original
+full-box identity is gone.**
+
+That's precisely why, once `DISTINCT` is involved, `ORDER BY` **loses access**
+to any column not on the receipt — the full boxes genuinely no longer exist
+as distinct, individual things by the time `ORDER BY` runs. Without
+`DISTINCT`, every box stays fully intact and individually identifiable all the
+way through to `ORDER BY`, which is why non-selected columns remain usable.
+
+### The One-Sentence Takeaway
+
+> **The "logical order of execution" governs what each clause is allowed to
+> *reference by name* (like a `SELECT` alias), not whether the underlying row
+> data still physically exists. Full row data survives all the way to
+> `ORDER BY` — the only thing that actually erases it early is `DISTINCT`,
+> because merging duplicate rows destroys their individual identity.**
+
