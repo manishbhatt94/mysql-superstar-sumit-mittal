@@ -27,18 +27,18 @@ LIMIT    n OFFSET m;
 ```
 
 ### Logical Execution Order
-| Step | Clause              | Purpose                                                   |
-|------|----------------------|-----------------------------------------------------------|
-| 1    | `FROM`               | Identify source table(s)                                   |
-| 2    | `JOIN` + `ON`         | Combine tables, apply join conditions                      |
-| 3    | `WHERE`               | Filter individual rows (before grouping)                   |
-| 4    | `GROUP BY`            | Group filtered rows into buckets                            |
-| 5    | Aggregate functions   | Compute `SUM()`, `COUNT()`, `AVG()`, etc. per group         |
-| 6    | `HAVING`              | Filter groups (after aggregation)                            |
-| 7    | `SELECT`              | Choose/compute output columns, aliases created here          |
-| 8    | `DISTINCT`            | Remove duplicate rows from the result set                    |
-| 9    | `ORDER BY`            | Sort the final result set                                    |
-| 10   | `LIMIT` / `OFFSET`    | Restrict number of rows returned                              |
+| Step | Clause                | Purpose                                                   |
+|------|-----------------------|-----------------------------------------------------------|
+| 1    | `FROM`                | Identify source table(s)                                  |
+| 2    | `JOIN` + `ON`         | Combine tables, apply join conditions                     |
+| 3    | `WHERE`               | Filter individual rows (before grouping)                  |
+| 4    | `GROUP BY`            | Group filtered rows into buckets                          |
+| 5    | Aggregate functions   | Compute `SUM()`, `COUNT()`, `AVG()`, etc. per group       |
+| 6    | `HAVING`              | Filter groups (after aggregation)                         |
+| 7    | `SELECT`              | Choose/compute output columns, aliases created here       |
+| 8    | `DISTINCT`            | Remove duplicate rows from the result set                 |
+| 9    | `ORDER BY`            | Sort the final result set                                 |
+| 10   | `LIMIT` / `OFFSET`    | Restrict number of rows returned                          |
 
 **Memory trick:** `FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT`
 
@@ -179,16 +179,16 @@ Since `LIMIT` (step 10) is the very last step, it operates on the **final, sorte
 
 ## 4. Quick Reference Table — What Each Clause Can "See"
 
-| Clause     | Can reference raw columns? | Can reference SELECT aliases? | Can use aggregate functions? |
-|------------|:---------------------------:|:-------------------------------:|:-------------------------------:|
-| `FROM`     | N/A (defines source)         | ❌                               | ❌                               |
-| `WHERE`    | ✅                            | ❌ (standard) / ❌ in MySQL too   | ❌                               |
-| `GROUP BY` | ✅                            | ✅ (MySQL extension)              | ❌                               |
-| `HAVING`   | ✅                            | ✅ (MySQL extension)              | ✅                               |
-| `SELECT`   | ✅                            | N/A (aliases defined here)       | ✅                               |
-| `DISTINCT` | Operates on SELECT output    | ✅ (implicitly, via SELECT list) | N/A                              |
-| `ORDER BY` | ✅ (only if no DISTINCT)      | ✅                               | ✅ (rarely needed)               |
-| `LIMIT`    | N/A                          | N/A                              | N/A                              |
+| Clause     | Can reference raw columns?  | Can reference SELECT aliases?     | Can use aggregate functions?  |
+|------------|:---------------------------:|:---------------------------------:|:-----------------------------:|
+| `FROM`     | N/A (defines source)        | ❌                                | ❌                           |
+| `WHERE`    | ✅                          | ❌ (standard) / ❌ in MySQL too  | ❌                           |
+| `GROUP BY` | ✅                          | ✅ (MySQL extension)              | ❌                           |
+| `HAVING`   | ✅                          | ✅ (MySQL extension)              | ✅                           |
+| `SELECT`   | ✅                          | N/A (aliases defined here)        | ✅                           |
+| `DISTINCT` | Operates on SELECT output   | ✅ (implicitly, via SELECT list)  | N/A                           |
+| `ORDER BY` | ✅ (only if no DISTINCT)    | ✅                                | ✅ (rarely needed)           |
+| `LIMIT`    | N/A                         | N/A                                | N/A                          |
 
 ---
 
@@ -228,12 +228,12 @@ Let's say some clubs get **disbanded** over time (lack of funding, no teacher
 supervisor, etc.), but old membership records stay in the database. We add one
 new column to `clubs`:
 
-| club_id | club_name        | is_active |
+| club_id | club_name         | is_active |
 |---------|-------------------|-----------|
-| 1       | Photography Club | TRUE      |
-| 2       | Robotics Club    | **FALSE** (disbanded this year) |
-| 3       | Drama Club       | TRUE      |
-| 4       | Debate Club      | TRUE      |
+| 1       | Photography Club  | TRUE      |
+| 2       | Robotics Club     | **FALSE** (disbanded this year) |
+| 3       | Drama Club        | TRUE      |
+| 4       | Debate Club       | TRUE      |
 
 Students, same as before:
 
@@ -242,8 +242,8 @@ Students, same as before:
 | Aarav        | 1 (Photography) |
 | Priya        | 1 (Photography) |
 | Kabir        | 2 (Robotics — disbanded) |
-| Sneha        | NULL (no club)   |
-| Vikram       | 3 (Drama) |
+| Sneha        | NULL (no club)  |
+| Vikram       | 3 (Drama)       |
 
 ### The Task
 
@@ -275,13 +275,13 @@ blank club info.
 
 **Result — all 5 students present, exactly as intended:**
 
-| student_name | club_name         |
+| student_name | club_name          |
 |--------------|--------------------|
-| Aarav        | Photography Club  |
-| Priya        | Photography Club  |
+| Aarav        | Photography Club   |
+| Priya        | Photography Club   |
 | Kabir        | NULL (blank)       |
 | Sneha        | NULL (blank)       |
-| Vikram       | Drama Club        |
+| Vikram       | Drama Club         |
 
 
 
@@ -303,13 +303,13 @@ So let's walk through it in two separate phases, exactly as the database does:
 
 **Phase 1 — The `LEFT JOIN` runs first, with no filtering yet:**
 
-| student_name | club_name (matched) | is_active |
-|--------------|----------------------|-----------|
-| Aarav        | Photography Club    | TRUE      |
-| Priya        | Photography Club    | TRUE      |
-| Kabir        | Robotics Club       | **FALSE**    |
-| Sneha        | NULL (no match found) | **NULL**  |
-| Vikram       | Drama Club          | TRUE      |
+| student_name | club_name (matched)   | is_active  |
+|--------------|-----------------------|------------|
+| Aarav        | Photography Club      | TRUE       |
+| Priya        | Photography Club      | TRUE       |
+| Kabir        | Robotics Club         | **FALSE**  |
+| Sneha        | NULL (no match found) | **NULL**   |
+| Vikram       | Drama Club            | TRUE       |
 
 Notice: at this point, the `LEFT JOIN` **did its job correctly** — all 5
 students are still here. Kabir got matched to Robotics Club (a real match —
@@ -328,11 +328,11 @@ with zero awareness that this data came from a LEFT JOIN:**
 
 **Final result — only 3 students left:**
 
-| student_name | club_name         |
+| student_name | club_name          |
 |--------------|--------------------|
-| Aarav        | Photography Club  |
-| Priya        | Photography Club  |
-| Vikram       | Drama Club        |
+| Aarav        | Photography Club   |
+| Priya        | Photography Club   |
+| Vikram       | Drama Club         |
 
 **Kabir and Sneha are both gone** — silently. No error, no warning. The query
 *looks* like a `LEFT JOIN` in your code, but it *behaves* exactly like an
