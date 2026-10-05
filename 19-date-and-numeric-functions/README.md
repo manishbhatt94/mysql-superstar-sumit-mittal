@@ -56,3 +56,13 @@ CREATE TABLE contacts(
 - Find number of days b/w two date values with `DATEDIFF()`.
 - Formatting datetime values with `DATE_FORMAT()` - which handles both date & time formatting. (For only formatting a TIME type value, we can use `TIME_FORMAT()` function.)
 - Getting Unix timestamp of a datetime (or of current timestamp), and getting the datetime value from a Unix timestamp. Using `UNIX_TIMESTAMP()` & `FROM_UNIXTIME` functions.
+
+
+---
+
+## Other Functions
+
+- Math functions (`ABS`, `CEIL`, `FLOOR`, `ROUND`, `TRUNCATE`, `RAND`, `MOD`).
+- **CASE WHEN** statement.
+- `CAST(value AS type)` function.
+- `COALESCE(val1, val2, ..., fallback_val)` function.
