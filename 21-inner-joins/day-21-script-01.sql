@@ -61,7 +61,9 @@ SELECT c.customer_id, c.customer_fname, c.customer_lname
 	FROM customers c INNER JOIN orders o
 	ON c.customer_id = o.customer_id
 ORDER BY customer_id;
--- Returns 30 customers (ID's such as 219, 469, 4555, 6072, 7552, 8575, etc.)
+-- Returns 30 customers (ID's such as 219, 339, 469, 1187, 1481,
+-- 1808, 2073, 2096, 2450, 4555, 4927, 6072, 6613, 7011, 7552,
+-- 8243, 8343, 8575, etc.)
 -- So, these 30 customers have never placed an order yet.
 
 -- Verifying:
