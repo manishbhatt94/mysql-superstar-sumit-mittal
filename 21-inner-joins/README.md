@@ -9,7 +9,7 @@ https://www.youtube.com/watch?v=5BVZj4QWPQM
 
 ## Setup Data
 
-Refer [joins-practice-database-setup.md](./joins-practice-database-setup.md).
+Refer [joins-practice-database-setup.sql](./joins-practice-database-setup.sql).
 
 Here we create a new database called `trendytech_joins_practice`, and create the
 below six (6) tables within it:
