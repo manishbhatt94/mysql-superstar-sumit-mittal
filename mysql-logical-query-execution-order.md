@@ -27,6 +27,7 @@ LIMIT    n OFFSET m;
 ```
 
 ### Logical Execution Order
+
 | Step | Clause                | Purpose                                                   |
 |------|-----------------------|-----------------------------------------------------------|
 | 1    | `FROM`                | Identify source table(s)                                  |
@@ -40,7 +41,26 @@ LIMIT    n OFFSET m;
 | 9    | `ORDER BY`            | Sort the final result set                                 |
 | 10   | `LIMIT` / `OFFSET`    | Restrict number of rows returned                          |
 
-**Memory trick:** `FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT`
+
+> [!TIP]
+> **Memory trick:**
+> `FROM → WHERE → GROUP BY → Aggregation → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT`
+
+
+### Diagram for Execution Order Flow
+
+<table align="center" border="1" cellpadding="8">
+    <tr>
+       <td align="center">
+            <img src="./images/fig-01-query-exec-order--edited.png"
+                alt="Flow diagram for - SQL Query Logical Execution Order"
+                title="Flow diagram for - SQL Query Logical Execution Order"
+                width="720" height="578" loading="lazy" border="1">
+            <br />
+            <em>Figure 1: Flow diagram for - SQL Query Logical Execution Order</em>
+        </td>
+    </tr>
+</table>
 
 ---
 
