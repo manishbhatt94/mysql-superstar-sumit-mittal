@@ -47,9 +47,9 @@ INSERT INTO employees (employee_id, employee_name, department_id, manager_id, sa
 (20,   'Shweta Tiwari',    2,    3,      127000.00,    'Developer IT'         );    -- Reports to Anita Desa.
 ```
 
-<u>**Scenario to discuss:**</u>
-
-**We need to find all employees who earn more than their department's average salary.**
+> [!IMPORTANT] <u>**Scenario to discuss:**</u>
+>
+> **We need to find all employees who earn more than their department's average salary.**
 
 ---
 
