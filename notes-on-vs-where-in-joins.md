@@ -10,6 +10,47 @@
 Think of it as:
 > `ON` = **how to match** rows  |  `WHERE` = **which matched rows to keep**
 
+
+### Sample Scenario
+
+Given below `employees` MySQL table:
+```sql
+DROP TABLE IF EXISTS employees;
+CREATE TABLE IF NOT EXISTS employees (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(100),
+    department_id INT,
+    manager_id INT,
+    salary DECIMAL(10, 2),
+    designation VARCHAR(50)
+); 
+INSERT INTO employees (employee_id, employee_name, department_id, manager_id, salary, designation) VALUES
+(1,    'Rajesh Kumar',     1,    NULL,   200000.00,    'CEO'                  ),    -- No manager.
+(2,    'Sonal Gupta',      2,    1,      150000.00,    'VP IT'                ),    -- Reports to Rajesh Kumar.
+(3,    'Anita Desai',      2,    2,      120000.00,    'Manager IT'           ),    -- Reports to Sonal Gupta.
+(4,    'Vikram Singh',     3,    1,      110000.00,    'VP HR'                ),    -- Reports to Rajesh Kumar.
+(5,    'Priya Nair',       2,    3,      130000.00,    'Developer IT'         ),    -- Reports to Anita Desai.
+(6,    'Amit Sharma',      3,    4,      100000.00,    'HR Manager'           ),    -- Reports to Vikram Singh.
+(7,    'Neha Patil',       4,    1,      140000.00,    'VP Finance'           ),    -- Reports to Rajesh Kumar.
+(8,    'Rohit Verma',      4,    7,      90000.00,     'Finance Analyst'      ),    -- Reports to Neha Patil.
+(9,    'Kavita Joshi',     2,    3,      125000.00,    'Developer IT'         ),    -- Reports to Anita Desai.
+(10,   'Manish Kulkarni',  5,    1,      145000.00,    'VP Marketing'         ),    -- Reports to Rajesh Kumar.
+(11,   'Nidhi Agarwal',    5,    10,     95000.00,     'Marketing Manager'    ),    -- Reports to Manish Kulkarni.
+(12,   'Suresh Iyer',      4,    7,      85000.00,     'Accountant'           ),    -- Reports to Neha Patil.
+(13,   'Ravi Menon',       6,    1,      135000.00,    'VP Operations'        ),    -- Reports to Rajesh Kumar.
+(14,   'Anjali Sinha',     6,    13,     105000.00,    'Operations Manager'   ),    -- Reports to Ravi Menon.
+(15,   'Tarun Mehta',      2,    2,      115000.00,    'IT Support'           ),    -- Reports to Sonal Gupta.
+(16,   'Deepika Rao',      3,    4,      98000.00,     'HR Assistant'         ),    -- Reports to Vikram Singh.
+(17,   'Karan Chawla',     5,    10,     92000.00,     'Marketing Analyst'    ),    -- Reports to Manish Kulkarni.
+(18,   'Meena Kapoor',     4,    7,      102000.00,    'Finance Manager'      ),    -- Reports to Neha Patil.
+(19,   'Sanjay Reddy',     6,    13,     108000.00,    'Logistics Coordinator'),    -- Reports to Ravi Menon.
+(20,   'Shweta Tiwari',    2,    3,      127000.00,    'Developer IT'         );    -- Reports to Anita Desa.
+```
+
+<u>**Scenario to discuss:**</u>
+
+**We need to find all employees who earn more than their department's average salary.**
+
 ---
 
 ## 2. INNER JOIN → `ON` vs `WHERE` = SAME RESULT
