@@ -22,6 +22,22 @@ below six (6) tables within it:
 6. products
 
 
+### ER Diagram of Sample Data
+
+<table align="center" border="1" cellpadding="8">
+    <tr>
+       <td align="center">
+            <img src="./images/fig-01-ecomm-data-er-diag.png"
+                alt="Sample (Ecommerce) Data - ER Diagram (ASCII)"
+                title="Sample (Ecommerce) Data - ER Diagram (ASCII)"
+                width="640" height="699" loading="lazy" border="1">
+            <br />
+            <em>Figure 1: Sample (Ecommerce) Data - ER Diagram (ASCII)</em>
+        </td>
+    </tr>
+</table>
+
+
 ### Seeding Data
 
 Login to MySQL using your user account (don't use `mysqlsh`, just the classic
