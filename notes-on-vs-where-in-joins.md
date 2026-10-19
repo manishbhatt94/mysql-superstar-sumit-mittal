@@ -196,3 +196,137 @@ Both return the same 6 rows. ✅
 - *"Inequalities belong in `ON` only when they **are** the join condition (non-equi joins)."*
 - *"Derived-table JOIN usually beats a correlated subquery for computing aggregates per group."*
 
+---
+
+## 9. Anti-Join Pitfall: `LEFT JOIN ... ON ... IS NULL` (Real Bug Case Study)
+
+**Goal:** Find customers who have **never** placed an order.
+
+### ❌ Broken Query — Returns ALL 12,435 Customers
+
+```sql
+SELECT c.*, o.order_id, o.order_date, o.order_status
+FROM customers c
+LEFT JOIN orders o
+       ON c.customer_id = o.customer_id
+      AND o.order_id IS NULL;   -- ← WRONG place
+```
+
+**Result:** All 12,435 customers, all order columns `NULL`. Not what we wanted.
+
+### Why It Fails — Pipeline Trace
+
+`ON` is evaluated **during** the join to decide *who matches whom*.
+
+| Customer type | `c.customer_id = o.customer_id` | `o.order_id IS NULL` | Combined (`AND`) | Outcome |
+|---|---|---|---|---|
+| **Has orders** | ✅ TRUE | ❌ FALSE (real order_ids) | ❌ FALSE | No match → NULL-extended row |
+| **No orders** | (no rows to test) | — | — | No match → NULL-extended row |
+
+→ **Every** customer hits the NULL-extended fallback → 12,435 rows, order columns all NULL.
+
+**Key insight:** `ON ... AND right_col IS NULL` means *"match only against NULL-valued right rows"* (i.e. never, for a PK-like column). It does **not** mean "keep only unmatched rows."
+
+### The Mental Model
+
+```
+LEFT JOIN pipeline:
+  1. For each left row, scan right table
+  2. Keep pairs where ON is TRUE
+  3. If a left row got 0 matches → still emit it with NULLs on the right side
+  4. THEN apply WHERE to filter the output
+```
+
+- **`ON` = "who gets paired with whom"** (during join)
+- **`WHERE` = "which of those pairings do I keep"** (after join)
+- "Unmatched" status only exists in the **output** → filter it in `WHERE`.
+
+### ✅ Fix 1 — `LEFT JOIN ... WHERE ... IS NULL` (classic anti-join)
+
+```sql
+SELECT c.*
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.order_id IS NULL;
+```
+
+| Customer type | `o.order_id` after join | Kept by `WHERE`? |
+|---|---|---|
+| Has orders | populated (NOT NULL) | ❌ removed |
+| No orders | NULL | ✅ kept |
+
+### ✅ Fix 2 — `NOT EXISTS` (clearest intent, NULL-safe)
+
+```sql
+SELECT c.*
+FROM customers c
+WHERE NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id
+);
+```
+
+### ⚠️ Fix 3 — `NOT IN` (careful with NULLs)
+
+```sql
+SELECT c.*
+FROM customers c
+WHERE c.customer_id NOT IN (
+    SELECT customer_id FROM orders WHERE customer_id IS NOT NULL  -- guard!
+);
+```
+
+**Why the guard?** `x NOT IN (1, 2, NULL)` → `UNKNOWN` (never `TRUE`) → returns **zero rows** if any NULL appears in the subquery. In your `orders` schema, `customer_id` is nullable, so this is a real risk.
+
+### Side-by-Side: What the Two ON/WHERE Queries Ask
+
+| Query | Plain-English meaning |
+|---|---|
+| `ON ... AND o.order_id IS NULL` | "Match customer with an order **whose `order_id` is NULL** (a fake row). Never matches → emit everyone with NULLs." |
+| `WHERE o.order_id IS NULL` | "Do the normal join, then keep only rows where **no order was matched**." |
+
+Same words, opposite semantics.
+
+### Anti-Join Styles — Cheat Sheet
+
+| Style | Portable? | NULL-safe? | When to use |
+|---|---|---|---|
+| `LEFT JOIN ... WHERE right.pk IS NULL` | ✅ | ✅ | Classic, works everywhere |
+| `NOT EXISTS (...)` | ✅ | ✅ | **Default choice** — clearest intent |
+| `NOT IN (...)` | ✅ | ❌ | Only when subquery column is `NOT NULL` or guarded |
+
+### 🏎️ Performance: Which Does More Work?
+
+**Think in server steps, not Big-O.** All three answer the same question; what differs is **how well MySQL can optimize them**.
+
+| Approach | How MySQL Runs It (Conceptually) | Complexity | Key Caveat |
+|---|---|---|---|
+| `LEFT JOIN ... IS NULL` | Scan `customers`; for each, look up matching orders; emit NULL-extended row when none found. | **O(C × log O)** with index on `orders.customer_id`. Predictable. | Sometimes the `IS NULL` check blocks certain optimizations — but generally fine for anti-joins. |
+| `NOT EXISTS` | Same idea: per customer, check if any order exists; can short-circuit at first match. | **O(C × log O)** with index. MySQL 8.0.17+ often **rewrites it into the exact same anti-join** as `LEFT JOIN`. | Older MySQL (pre-8) had quirks making it marginally slower — largely irrelevant now. |
+| `NOT IN` | Build list of `customer_id`s having orders, then scan `customers` and check absence. | **O(C + O)** ideal, but can degrade badly. | **NULL trap**: even one NULL in the subquery → returns empty set. Optimizer often **cannot** use the fast anti-join → falls back to **materializing** the subquery (extra memory/disk I/O). |
+
+**Why `NOT IN` can be the "heaviest":**
+1. **Materialize subquery** → build a temporary table of `orders.customer_id`.
+2. **Scan the temp table** → extra memory/disk I/O and indexing time.
+3. Because of SQL three-valued logic with `NULL`, MySQL **cannot safely** fold it into an efficient anti-join when the column is nullable.
+
+That extra machinery is the "more work" → less predictable, often slower.
+
+### 🎯 Practical Hierarchy (for revision)
+
+1. **`NOT EXISTS`** — **Safest default.** Null-safe, clearest intent, optimized perfectly in modern MySQL.
+2. **`LEFT JOIN ... IS NULL`** — **Classic & portable.** Equally fast in MySQL for this pattern.
+3. **`NOT IN`** — **Use with caution.** Only when subquery column is `NOT NULL` (or explicitly guarded). Otherwise: performance + correctness trap.
+
+### Interview Soundbite
+
+> "All three methods solve the anti-join problem. In modern MySQL, `NOT EXISTS` and `LEFT JOIN ... IS NULL` are usually rewritten into the same efficient anti-join plan. `NOT IN` can be semantically dangerous with NULLs and often forces the optimizer to materialize the subquery — making it less predictable and potentially slower."
+
+### Rules to Remember
+
+1. **`ON` = matching logic. `WHERE` = output filter.** Predicates on the outer side of a `LEFT JOIN` go in **`WHERE`**.
+2. **`WHERE right_col IS NULL` after `LEFT JOIN` = anti-join** ("find rows with no match").
+3. **`ON ... AND right_col IS NULL` almost never means what you think** — it means "match against NULL-valued right rows" (usually: never matches).
+4. **A `LEFT JOIN` cannot be filtered to "unmatched only" via `ON`.** The unmatched status only exists post-join → must be filtered in `WHERE`.
+5. **Prefer `NOT EXISTS`** when writing anti-joins fresh — safest with NULLs and reads like English.
+6. **Avoid `NOT IN` on nullable columns** — silent empty results + likely optimizer materialization cost.
+
