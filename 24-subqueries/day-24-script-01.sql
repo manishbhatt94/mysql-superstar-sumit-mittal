@@ -135,6 +135,7 @@ SELECT * FROM customers c WHERE EXISTS (
 
 -- First, we construct an intermediate table, where we keep the per order
 -- "num_order_items" and "order_amount":
+-- (This result-set contains a record (order_id, num_order_items, order_amount) for each order)
 SELECT
 	oi.order_item_order_id AS order_id,
     COUNT(*) AS num_order_items,
@@ -144,6 +145,10 @@ GROUP BY oi.order_item_order_id;
 
 -- Then we use the above, to calculate avg. no. of order items, and avg. order amount
 -- across all orders:
+-- (NOTE: Whenever we use a subquery as part of FROM clause or JOIN clause, like below,
+-- MySQL necessarily mandates us to assign an alias to the result-set representing the
+-- subquery; like we used the alias 't' below. If we don't provide an alias, MySQL will
+-- give an error telling the same - when the query is executed.)
 SELECT
 AVG(t.num_order_items) AS avg_order_items,
 AVG(t.order_amount) AS avg_order_amount
