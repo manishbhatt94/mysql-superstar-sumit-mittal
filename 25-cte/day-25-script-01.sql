@@ -121,3 +121,122 @@ FROM tbl_one t1
 	INNER JOIN orders o ON t1.order_id = o.order_id
 WHERE t1.num_order_items > t2.avg_order_items AND
 	t1.order_amount > t2.avg_order_amount;
+-- Returns: The same 25,773 records. But with more order details per record
+-- i.e. Records of these tuples: (order_id, order_date, order_status, customer_id,
+-- 			num_order_items, order_amount, avg_order_items, avg_order_amount)
+
+
+-- ==== Refactor "Big Orders" query from "day-24-script-02.sql" file that
+-- didn't use CROSS JOIN, but specified 'big order' conditions in
+-- the HAVING clause =====
+
+-- Original query (using HAVING instead of CROSS JOIN which we used above):
+SELECT order_item_order_id AS order_id,
+	COUNT(*) AS num_order_items,
+	SUM(total_amount) AS order_amount
+FROM order_items
+GROUP BY order_item_order_id
+HAVING COUNT(*) > ( -- Subquery 'A'
+		SELECT AVG(t.num_order_items) AS avg_order_items
+		FROM (
+			SELECT order_item_order_id AS order_id,
+				COUNT(*) AS num_order_items
+			FROM order_items GROUP BY order_item_order_id
+		) t
+	)
+    AND SUM(total_amount) > ( -- Subquery 'B'
+		SELECT AVG(t.order_amount) AS avg_order_amount
+		FROM (
+			SELECT order_item_order_id AS order_id,
+				SUM(total_amount) AS order_amount
+			FROM order_items GROUP BY order_item_order_id
+		) t
+    );
+-- Returns: The same 25,773 records with (order_id, num_order_items, order_amount) tuples.
+
+-- **** Refactored to use CTE: ****
+WITH grouped_orders AS (
+	SELECT order_item_order_id AS order_id,
+		COUNT(*) AS num_order_items,
+		SUM(total_amount) AS order_amount
+	FROM order_items GROUP BY order_item_order_id
+)
+SELECT * FROM grouped_orders
+WHERE num_order_items > ( -- Subquery 'A' from prev. query reduced to this:
+	SELECT AVG(t.num_order_items) FROM grouped_orders t
+) AND order_amount > ( -- Subquery 'B' from prev. query reduced to this:
+	SELECT AVG(t.order_amount) FROM grouped_orders t
+);
+-- Returns: The same 25,773 records with (order_id, num_order_items, order_amount) tuples.
+
+-- OR: Define two more CTEs, one each for avg_order_items, & avg_order_amount:
+WITH grouped_orders AS (
+	SELECT order_item_order_id AS order_id,
+		COUNT(*) AS num_order_items,
+		SUM(total_amount) AS order_amount
+	FROM order_items GROUP BY order_item_order_id
+),
+averaged_values AS (
+	-- Subquery A & B, from prev. query, reduced to a single CTE "averaged_values" below
+	SELECT
+		AVG(t.num_order_items) AS avg_order_items,
+		AVG(t.order_amount) AS avg_order_amount
+	FROM grouped_orders t
+)
+SELECT * FROM grouped_orders
+WHERE num_order_items > (SELECT avg_order_items FROM averaged_values)
+AND order_amount > (SELECT avg_order_amount FROM averaged_values);
+
+-- And, if we also need to show more details about each order record, like we
+-- did before, we can add an INNER JOIN with `orders` table to the above query:
+WITH grouped_orders AS (
+	SELECT order_item_order_id AS order_id,
+		COUNT(*) AS num_order_items,
+		SUM(total_amount) AS order_amount
+	FROM order_items GROUP BY order_item_order_id
+)
+SELECT
+	gr.order_id, o.order_date, o.order_status, o.customer_id,
+	gr.num_order_items, gr.order_amount
+FROM grouped_orders gr
+	INNER JOIN orders o ON gr.order_id = o.order_id
+WHERE num_order_items > ( -- Subquery 'A' from prev. query reduced to this:
+	SELECT AVG(t.num_order_items) FROM grouped_orders t
+) AND order_amount > ( -- Subquery 'B' from prev. query reduced to this:
+	SELECT AVG(t.order_amount) FROM grouped_orders t
+);
+-- Returns: The same 25,773 records. But with more order details per record
+-- i.e. Records of these tuples: (order_id, order_date, order_status,
+-- 			customer_id, num_order_items, order_amount)
+
+
+-- ===== Find employees who earn more than the average salary in their department ========
+-- Refactor this query already covered in "day-24-script-02.sql" file, to use CTE(s).
+
+-- Here's the original query as discussed in "day-24-script-02.sql" file:
+SELECT
+	e.emp_id, e.emp_name, e.department_id,
+    e.emp_salary, t.dept_avg_salary
+FROM employees_dummy e INNER JOIN (
+	-- We'll convert the below derived table subquery to a CTE:
+	SELECT department_id, AVG(emp_salary) AS dept_avg_salary
+	FROM employees_dummy GROUP BY department_id
+) t ON e.department_id = t.department_id
+WHERE e.emp_salary > t.dept_avg_salary;
+-- Result: 4 employee records with salary more than their dept_avg_salary.
+-- Got employees with emp_id's: 1, 2, 4, 6.
+
+
+-- **** Refactored to use CTE: ****
+WITH avg_salaries_by_dept AS (
+	SELECT department_id, AVG(emp_salary) AS dept_avg_salary
+	FROM employees_dummy GROUP BY department_id
+)
+SELECT
+	e.emp_id, e.emp_name, t.department_id,
+    e.emp_salary, t.dept_avg_salary
+FROM employees_dummy e
+	INNER JOIN avg_salaries_by_dept t ON e.department_id = t.department_id
+WHERE e.emp_salary > t.dept_avg_salary;
+-- SAME Result: 4 employee records with salary more than their dept_avg_salary.
+-- Got employees with emp_id's: 1, 2, 4, 6.
