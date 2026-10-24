@@ -72,12 +72,15 @@ INSERT INTO employees (employee_id, employee_name, department_id, manager_id, sa
 SELECT * FROM employees;
 
 WITH RECURSIVE employee_hierachy AS (
+	-- Anchor query:
 	SELECT employee_id, employee_name, manager_id,
     designation, 0 AS job_level FROM employees
     WHERE manager_id IS NULL
 
     UNION ALL
 
+	-- Recursive query:
+	-- Find direct reports of the employee(s) found in previous step.
 	SELECT e.employee_id, e.employee_name, e.manager_id,
     e.designation, eh.job_level + 1
     FROM employees e INNER JOIN employee_hierachy eh
@@ -105,6 +108,9 @@ SELECT n, val FROM cte_powers;
 --  4  |  16
 --  5  |  32
 
+
+-- ==== Show each employee together with their full chain of command as text,
+-- such as 'John Doe > Jane Smith > Bob Johnson'. ======
 WITH RECURSIVE employee_hierachy_paths AS (
 	SELECT employee_id, employee_name, manager_id,
 	designation, 0 AS job_level,
@@ -121,3 +127,66 @@ WITH RECURSIVE employee_hierachy_paths AS (
 	ON e.manager_id = ehp.employee_id
 )
 SELECT * FROM employee_hierachy_paths;
+
+
+-- ==== Get complete hierarchy of employees for 'Shweta Tiwari' (emp_id=20) in
+-- a manner that each employee in hierarchy above is shown as a separate record
+-- from top-most hierarchy down to the individual employee themselves =====
+WITH RECURSIVE emp_chain (employee_id, employee_name, manager_id, designation, salary, relative_seniority)
+AS (
+	SELECT employee_id, employee_name, manager_id,
+	designation, salary, 0 AS relative_seniority
+	FROM employees WHERE employee_id = 20
+
+	UNION ALL
+
+	-- Find manager of the employee found in previous step:
+	SELECT e.employee_id, e.employee_name, e.manager_id,
+	e.designation, e.salary, ec.relative_seniority + 1
+	FROM employees e
+	INNER JOIN emp_chain ec
+	ON e.employee_id = ec.manager_id
+)
+SELECT * FROM emp_chain ORDER BY relative_seniority;
+
+
+-- ==== Generate Fibonacci series upto 30 terms =====
+-- n=0 -> 0
+-- n=1 -> 1
+-- n=2 -> 1
+-- n=3 -> 2
+-- n=4 -> 3
+-- n=5 -> 5
+-- n=6 -> 8
+-- n=7 -> 13
+-- n=8 -> 21
+-- n=9 -> 34
+WITH RECURSIVE fibonacci_series (n, fibo, next_term) AS (
+	-- Anchor query:
+	SELECT   0 AS n,      0 AS fibo,     1 AS next_term
+
+	UNION ALL
+
+	-- Recursive query:
+	SELECT   fs.n + 1,    fs.next_term,   fs.fibo + fs.next_term
+	FROM fibonacci_series fs
+	WHERE fs.n < 30
+)
+SELECT n, fibo FROM fibonacci_series;
+
+/*
+
+|  p_prev_term  |  prev_term  |   fibo   |    n    |
+|---------------|-------------|----------|---------|
+|      0        |      0      |     0    |    0    |
+|      0        |      1      |     1    |    1    |
+|      1        |      1      |     2    |    2    | **
+|      0        |      1      |     1    |    3    |
+|      0        |      1      |     1    |    4    |
+|      0        |      1      |     1    |    5    |
+|      0        |      1      |     1    |    6    |
+|      0        |      1      |     1    |    7    |
+|      0        |      1      |     1    |    8    |
+|      0        |      1      |     1    |    9    |
+
+*/
