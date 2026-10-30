@@ -3,7 +3,7 @@ CREATE DATABASE trendytech_interview_problems;
 USE trendytech_interview_problems;
 
 
--- ####### Q1. #########
+-- ####### Q1. (Refer README.md) #########
 
 DROP TABLE IF EXISTS source_t;
 CREATE TABLE IF NOT EXISTS source_t (

@@ -8,7 +8,7 @@ Course Dashboard: https://courses.trendytech.in/v3/myaccount/course/188755/
 
 ## Notes Index
 
-**Root directory notes:**
+### Root directory notes:**
 
 - [cli-fast-csv-import.md](./cli-fast-csv-import.md) \
   Fast CSV data import into MySQL table using MySQL CLI Client command `LOAD DATA LOCAL INFILE`.
@@ -16,6 +16,24 @@ Course Dashboard: https://courses.trendytech.in/v3/myaccount/course/188755/
   *SQL Logical Query Execution Order* and correlation with SQL Syntax Order.
 - [sql-joins-beginner-guide.md](./sql-joins-beginner-guide.md) \
   Beginner friendly simplified full guide to working with SQL Joins.
+- [notes-on-vs-where-in-joins.md](./notes-on-vs-where-in-joins.md) \
+  Placing filtering condition in ON clause vs WHERE clause in JOIN queries.
+- [notes-group-by-and-functional-dependency.md](./notes-group-by-and-functional-dependency.md) \
+  Ability to use columns in SELECT list, which are functionally dependent on the grouped column.
+- [notes-recursive-CTE.md](./notes-recursive-CTE.md) \
+  Beginner notes on Recursive CTE's working with step-wise recursive flow & dry-runs on examples.
+
+---
+
+## Guides Index
+
+Infographics enabled topical guides with images, powerpoint like PDFs, individual slides images,
+etc. to visualize and understand some topics fast and well.
+
+- [JOINs Guide](./guides/joins/) \
+  Guide on JOINs. Contains PDF and individual slides.
+- [Recursive CTE Guide](./guides/recursive-cte/) \
+  Guide on Recursive CTE. Contains PDF and individual slides.
 
 ---
 
