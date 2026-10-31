@@ -1,5 +1,12 @@
 USE trendytech_interview_problems;
 
+-- LC Question Link:
+-- https://leetcode.com/problems/count-salary-categories/description/
+
+-- LC Question Title:
+-- 1907. Count Salary Categories
+
+
 -- ==== Schema setup ======
 CREATE TABLE IF NOT EXISTS Accounts (account_id INT, income INT);
 TRUNCATE TABLE Accounts;
