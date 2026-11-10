@@ -22,6 +22,9 @@ Course Dashboard: https://courses.trendytech.in/v3/myaccount/course/188755/
   Ability to use columns in SELECT list, which are functionally dependent on the grouped column.
 - [notes-recursive-CTE.md](./notes-recursive-CTE.md) \
   Beginner notes on Recursive CTE's working with step-wise recursive flow & dry-runs on examples.
+- [notes-cume-dist-percent-rank.md](./notes-cume-dist-percent-rank.md) \
+  Notes on comparison & explanation on **"_Fractional Ranking_ Window Functions"** - `CUME_DIST()`
+  and `PERCENT_RANK()`.
 
 ---
 
